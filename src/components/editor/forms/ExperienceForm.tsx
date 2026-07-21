@@ -1,12 +1,134 @@
 "use client";
 
-import type { Section } from "@/lib/schema";
-import { newExperienceItem } from "@/lib/defaults";
-import { AddButton, TextArea, TextInput } from "./fields";
+import type { ExperienceItem, Section } from "@/lib/schema";
+import { newExperienceItem, newSubPosition } from "@/lib/defaults";
+import { AddButton, SmallButton, TextArea, TextInput } from "./fields";
 import { ItemShell } from "./ItemShell";
 import { moveItem, useSectionMutate } from "./sectionHelpers";
 
 type ExperienceSection = Extract<Section, { kind: "experience" }>;
+
+// Nested client engagements (consultant positions) under one employer entry.
+function SubPositionsEditor({
+  item,
+  mutateItem,
+}: {
+  item: ExperienceItem;
+  mutateItem: (fn: (item: ExperienceItem) => void) => void;
+}) {
+  const subs = item.subPositions ?? [];
+  return (
+    <div>
+      <span className="mb-0.5 block text-xs font-medium text-slate-500">
+        Consultant positions
+      </span>
+      {subs.length > 0 && (
+        <TextInput
+          label="List label"
+          placeholder="Consultant positions"
+          value={item.subPositionsLabel ?? ""}
+          onChange={(v) =>
+            mutateItem((it) => void (it.subPositionsLabel = v || undefined))
+          }
+        />
+      )}
+      <div className="mt-1.5 flex flex-col gap-1.5">
+        {subs.map((sp, j) => (
+          <div
+            key={sp.id}
+            className={`rounded border border-slate-200 bg-white p-1.5 ${
+              sp.visible ? "" : "opacity-60"
+            }`}
+          >
+            <div className="mb-1 flex items-center gap-1">
+              <span className="min-w-0 flex-1 truncate text-xs text-slate-500">
+                {sp.role || sp.client || "New position"}
+              </span>
+              <SmallButton
+                title={sp.visible ? "Hide" : "Show"}
+                onClick={() =>
+                  mutateItem(
+                    (it) =>
+                      void (it.subPositions![j].visible =
+                        !it.subPositions![j].visible)
+                  )
+                }
+              >
+                {sp.visible ? "👁" : "🚫"}
+              </SmallButton>
+              <SmallButton
+                danger
+                title="Remove position"
+                onClick={() =>
+                  mutateItem((it) => void it.subPositions!.splice(j, 1))
+                }
+              >
+                ✕
+              </SmallButton>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              <TextInput
+                label="Role"
+                value={sp.role}
+                onChange={(v) =>
+                  mutateItem((it) => void (it.subPositions![j].role = v))
+                }
+              />
+              <TextInput
+                label="Client"
+                value={sp.client}
+                onChange={(v) =>
+                  mutateItem((it) => void (it.subPositions![j].client = v))
+                }
+              />
+              <TextInput
+                label="Location"
+                value={sp.location ?? ""}
+                onChange={(v) =>
+                  mutateItem(
+                    (it) => void (it.subPositions![j].location = v || undefined)
+                  )
+                }
+              />
+              <div className="grid grid-cols-2 gap-1.5">
+                <TextInput
+                  label="Start"
+                  placeholder="2020-02"
+                  value={sp.startDate ?? ""}
+                  onChange={(v) =>
+                    mutateItem(
+                      (it) =>
+                        void (it.subPositions![j].startDate = v || undefined)
+                    )
+                  }
+                />
+                <TextInput
+                  label="End"
+                  placeholder="2021-06"
+                  value={sp.endDate ?? ""}
+                  onChange={(v) =>
+                    mutateItem(
+                      (it) => void (it.subPositions![j].endDate = v || undefined)
+                    )
+                  }
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <AddButton
+        onClick={() =>
+          mutateItem((it) => {
+            it.subPositions = [...(it.subPositions ?? []), newSubPosition()];
+          })
+        }
+      >
+        + Add consultant position
+      </AddButton>
+    </div>
+  );
+}
 
 export function ExperienceForm({ section }: { section: ExperienceSection }) {
   const mutate = useSectionMutate(section.id, "experience");
@@ -86,6 +208,10 @@ export function ExperienceForm({ section }: { section: ExperienceSection }) {
             hint="One bullet per line."
             value={item.bullets.join("\n")}
             onChange={(v) => mutate((s) => void (s.items[i].bullets = v.split("\n")))}
+          />
+          <SubPositionsEditor
+            item={item}
+            mutateItem={(fn) => mutate((s) => fn(s.items[i]))}
           />
         </ItemShell>
       ))}

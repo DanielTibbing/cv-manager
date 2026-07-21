@@ -96,6 +96,20 @@ const sectionBase = {
   style: SectionStyleOverridesSchema.optional(),
 };
 
+// A client engagement nested under an employer entry — e.g. consultant
+// positions held while employed by a consultancy, with their own role
+// names and periods.
+export const SubPositionSchema = z.object({
+  id: z.string(),
+  role: z.string(),
+  client: z.string(),
+  location: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  visible: z.boolean(),
+});
+export type SubPosition = z.infer<typeof SubPositionSchema>;
+
 export const ExperienceItemSchema = z.object({
   id: z.string(),
   role: z.string(),
@@ -106,6 +120,8 @@ export const ExperienceItemSchema = z.object({
   current: z.boolean().optional(),
   summary: z.string().optional(),
   bullets: z.array(z.string()),
+  subPositions: z.array(SubPositionSchema).optional(),
+  subPositionsLabel: z.string().optional(), // default "Consultant positions"
   visible: z.boolean(),
 });
 export type ExperienceItem = z.infer<typeof ExperienceItemSchema>;

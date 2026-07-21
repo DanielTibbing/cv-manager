@@ -16,6 +16,10 @@ export function newExperienceItem(): ExperienceItem {
   return { id: nanoid(8), role: "", company: "", bullets: [], visible: true };
 }
 
+export function newSubPosition() {
+  return { id: nanoid(8), role: "", client: "", visible: true };
+}
+
 export function newEducationItem(): EducationItem {
   return { id: nanoid(8), degree: "", institution: "", visible: true };
 }

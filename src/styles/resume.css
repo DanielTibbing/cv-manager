@@ -252,6 +252,26 @@
 .rs-bullets li + li { margin-top: var(--rs-bullet-gap); }
 .rs-bullets li::marker { color: var(--rs-c-accent); }
 
+/* ---------- consultant sub-positions ---------- */
+
+.rs-subpositions {
+  margin-top: 1.4mm;
+}
+
+.rs-subpositions-label {
+  font-size: var(--rs-fs-meta);
+  font-weight: 600;
+  color: var(--rs-c-muted);
+  margin-bottom: 0.5mm;
+}
+
+.rs-subposition {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4mm;
+}
+
 /* ---------- skills ---------- */
 
 .rs-skill-group-name {
