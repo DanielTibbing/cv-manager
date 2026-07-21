@@ -26,9 +26,13 @@ First run seeds a sample resume. Data layout:
 The editor preview and the export pipeline render **the same React components,
 the same CSS, in the same engine (Chromium)**. "Export PDF" calls
 `POST /api/export/{id}`, which drives Puppeteer to `/print/{id}` and writes the
-PDF to `exports/`. All resume dimensions are in `mm`/`pt`, fonts are
+PDF to `exports/`. All resume dimensions are in `mm`/`pt`, webfonts are
 self-hosted (`next/font`, `display: block`), and the exporter waits for
-`document.fonts.ready` + image decode before capturing.
+`document.fonts.ready` + image decode before capturing. The theme inspector
+also offers Avenir and Helvetica as macOS system fonts — deterministic here
+because preview and export render on the same machine (Chrome embeds the
+subsetted system font into the PDF), but a resume using them won't look
+identical on another OS; Nunito Sans and Arimo are the portable lookalikes.
 
 Page breaks are computed by our own deterministic paginator, never by
 Chrome's fragmentation heuristics: every atomic block (section title, job

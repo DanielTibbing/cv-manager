@@ -10,9 +10,23 @@ import { getTemplate } from "@/lib/templates";
 import { useResumeStore } from "@/store/resumeStore";
 import { OverrideNumber } from "./OverrideField";
 
+// Self-hosted webfonts render identically on any machine; the "system"
+// entries use fonts installed on this Mac — fine for a local tool, since the
+// preview and Puppeteer share the same installed font files, but a resume
+// using them won't render the same elsewhere.
 const FONT_OPTIONS = [
   { value: "var(--font-inter)", label: "Inter (sans)" },
   { value: "var(--font-source-serif)", label: "Source Serif (serif)" },
+  { value: "var(--font-nunito-sans)", label: "Nunito Sans (Avenir-like)" },
+  { value: "var(--font-arimo)", label: "Arimo (Helvetica-like)" },
+  {
+    value: '"Avenir Next", Avenir, var(--font-nunito-sans), sans-serif',
+    label: "Avenir (system)",
+  },
+  {
+    value: '"Helvetica Neue", Helvetica, var(--font-arimo), sans-serif',
+    label: "Helvetica (system)",
+  },
 ];
 
 const TITLE_STYLES: { value: ThemeTokens["sectionTitleStyle"]; label: string }[] = [
