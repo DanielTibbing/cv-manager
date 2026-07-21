@@ -1,0 +1,29 @@
+/*
+ * Loaded only by the /print route (via its nested layout).
+ *
+ * Pages are our own fixed-height 210×297mm boxes with margins as padding, so
+ * @page contributes nothing but the paper size. Chrome's fragmentation
+ * heuristics are never involved — each .pg-page maps 1:1 onto a PDF page.
+ */
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+}
+
+.pg-page {
+  break-after: page;
+  page-break-after: always;
+}
+
+.pg-page:last-child {
+  break-after: auto;
+  page-break-after: auto;
+}

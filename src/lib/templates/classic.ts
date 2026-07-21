@@ -1,0 +1,37 @@
+import type { Template } from "./types";
+
+export const classic: Template = {
+  id: "classic",
+  name: "Classic",
+  description: "Single column, serif headings, understated rules.",
+  tokens: {
+    fontFamilyHeading: "var(--font-source-serif)",
+    fontFamilyBody: "var(--font-source-serif)",
+    fontSizeBasePt: 10,
+    fontSizeNamePt: 22,
+    fontSizeSectionTitlePt: 11.5,
+    fontSizeItemTitlePt: 10.5,
+    fontSizeMetaPt: 9,
+    lineHeightBody: 1.4,
+    lineHeightHeading: 1.25,
+    colorText: "#222222",
+    colorHeading: "#111111",
+    colorAccent: "#6d2837",
+    colorMuted: "#555555",
+    colorRule: "#bbbbbb",
+    colorSidebarBg: "#f6f4f0",
+    pageMarginMm: { top: 20, right: 22, bottom: 20, left: 22 },
+    sectionGapMm: 7,
+    itemGapMm: 4.5,
+    bulletGapMm: 1.2,
+    sectionTitleStyle: "underline",
+    columnGapMm: 8,
+  },
+  defaultLayout: {
+    mode: "single",
+    sidePosition: "right",
+    headerPlacement: "banner",
+    sideColumnWidthPercent: 30,
+  },
+  sideKinds: [],
+};

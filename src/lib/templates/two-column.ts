@@ -1,0 +1,37 @@
+import type { Template } from "./types";
+
+export const twoColumn: Template = {
+  id: "two-column",
+  name: "Two-Column",
+  description: "Tinted sidebar for skills, education and contacts.",
+  tokens: {
+    fontFamilyHeading: "var(--font-inter)",
+    fontFamilyBody: "var(--font-inter)",
+    fontSizeBasePt: 9.5,
+    fontSizeNamePt: 23,
+    fontSizeSectionTitlePt: 10.5,
+    fontSizeItemTitlePt: 10,
+    fontSizeMetaPt: 8.5,
+    lineHeightBody: 1.45,
+    lineHeightHeading: 1.2,
+    colorText: "#26313d",
+    colorHeading: "#0f172a",
+    colorAccent: "#0e7490",
+    colorMuted: "#64748b",
+    colorRule: "#dbe2ea",
+    colorSidebarBg: "#eef4f7",
+    pageMarginMm: { top: 14, right: 14, bottom: 14, left: 14 },
+    sectionGapMm: 6,
+    itemGapMm: 4,
+    bulletGapMm: 1,
+    sectionTitleStyle: "accent-bar",
+    columnGapMm: 8,
+  },
+  defaultLayout: {
+    mode: "two-column",
+    sidePosition: "left",
+    headerPlacement: "banner",
+    sideColumnWidthPercent: 32,
+  },
+  sideKinds: ["skills", "education"],
+};

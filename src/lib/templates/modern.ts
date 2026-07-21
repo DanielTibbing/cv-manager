@@ -1,0 +1,37 @@
+import type { Template } from "./types";
+
+export const modern: Template = {
+  id: "modern",
+  name: "Modern",
+  description: "Single column, sans-serif, accent-bar section titles.",
+  tokens: {
+    fontFamilyHeading: "var(--font-inter)",
+    fontFamilyBody: "var(--font-inter)",
+    fontSizeBasePt: 9.5,
+    fontSizeNamePt: 24,
+    fontSizeSectionTitlePt: 11,
+    fontSizeItemTitlePt: 10.5,
+    fontSizeMetaPt: 8.5,
+    lineHeightBody: 1.45,
+    lineHeightHeading: 1.2,
+    colorText: "#1f2933",
+    colorHeading: "#111827",
+    colorAccent: "#2563eb",
+    colorMuted: "#6b7280",
+    colorRule: "#e5e7eb",
+    colorSidebarBg: "#f3f6fb",
+    pageMarginMm: { top: 16, right: 18, bottom: 16, left: 18 },
+    sectionGapMm: 6,
+    itemGapMm: 4,
+    bulletGapMm: 1,
+    sectionTitleStyle: "accent-bar",
+    columnGapMm: 8,
+  },
+  defaultLayout: {
+    mode: "single",
+    sidePosition: "right",
+    headerPlacement: "banner",
+    sideColumnWidthPercent: 32,
+  },
+  sideKinds: [],
+};

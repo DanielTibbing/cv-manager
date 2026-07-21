@@ -1,0 +1,37 @@
+import type { Template } from "./types";
+
+export const minimalist: Template = {
+  id: "minimalist",
+  name: "Minimalist",
+  description: "Airy single column, plain titles, generous whitespace.",
+  tokens: {
+    fontFamilyHeading: "var(--font-inter)",
+    fontFamilyBody: "var(--font-inter)",
+    fontSizeBasePt: 9.5,
+    fontSizeNamePt: 26,
+    fontSizeSectionTitlePt: 10,
+    fontSizeItemTitlePt: 10,
+    fontSizeMetaPt: 8.5,
+    lineHeightBody: 1.55,
+    lineHeightHeading: 1.2,
+    colorText: "#333333",
+    colorHeading: "#000000",
+    colorAccent: "#000000",
+    colorMuted: "#8a8a8a",
+    colorRule: "#eeeeee",
+    colorSidebarBg: "#fafafa",
+    pageMarginMm: { top: 22, right: 24, bottom: 22, left: 24 },
+    sectionGapMm: 9,
+    itemGapMm: 5,
+    bulletGapMm: 1.5,
+    sectionTitleStyle: "caps",
+    columnGapMm: 10,
+  },
+  defaultLayout: {
+    mode: "single",
+    sidePosition: "right",
+    headerPlacement: "banner",
+    sideColumnWidthPercent: 30,
+  },
+  sideKinds: [],
+};

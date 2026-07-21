@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CV Manager
 
-## Getting Started
+Personal, single-user, **local-first** resume builder. Runs entirely on your
+machine: resume data is JSON files on disk, the editor is a local Next.js app,
+and PDF export renders through headless Chrome for pixel-faithful A4 output.
 
-First, run the development server:
+## Quick start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # → http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+First run seeds a sample resume. Data layout:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Path | Contents |
+|---|---|
+| `data/index.json` | Resume list + which one is "active" |
+| `data/resumes/{id}.json` | One resume document each (zod-validated, versioned) |
+| `data/backups/` | Rolling backups, last 20 writes per resume |
+| `data/uploads/` | Profile photos |
+| `exports/` | Generated PDFs |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## How PDF fidelity works
 
-## Learn More
+The editor preview and the export pipeline render **the same React components,
+the same CSS, in the same engine (Chromium)**. "Export PDF" calls
+`POST /api/export/{id}`, which drives Puppeteer to `/print/{id}` and writes the
+PDF to `exports/`. All resume dimensions are in `mm`/`pt`, fonts are
+self-hosted (`next/font`, `display: block`), and the exporter waits for
+`document.fonts.ready` + image decode before capturing.
 
-To learn more about Next.js, take a look at the following resources:
+Page breaks are computed by our own deterministic paginator, never by
+Chrome's fragmentation heuristics: every atomic block (section title, job
+entry, skill group…) is rendered into a hidden measurement container, a pure
+function (`src/lib/pagination/paginate.ts`) assigns blocks to discrete
+fixed-height A4 `.pg-page` boxes (section titles glued to their first item,
+items never split), and both the editor preview and `/print` render those
+same pages. The editor therefore shows *exact* page boundaries, a
+bottom-margin guide band, and a per-page "N mm free" readout; blocks taller
+than a page get a red warning outline. `scripts/parity-check.mjs` proves the
+guarantee by pixel-diffing exported PDF pages against preview screenshots
+(gate: <0.5% per page; measured: ≤0.012%).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Development roadmap
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- [x] Phase 0 — schema (`src/lib/schema.ts`), atomic storage + backups, CRUD API
+- [x] Phase 1 — token-driven resume renderer (`src/components/resume/`, `src/styles/resume.css`)
+- [x] Phase 2 — one-click Puppeteer PDF export (`src/lib/pdf/exporter.ts`)
+- [x] Editor shell — zustand store (undo/redo + debounced autosave), dnd-kit
+      section reordering behind the `SortableColumns` adapter, manager page
+- [x] Phase 3 — deterministic pagination engine (`src/lib/pagination/`), editor page-break
+      preview (`PageChromeOverlay`), PDF↔preview parity harness (all fixtures ≤0.012% diff)
+- [x] Phase 4 — content editing forms for all section kinds + profile/contacts
+      (`src/components/editor/forms/`), photo upload with shape/size controls
+      (`PhotoUploader`), add/remove/hide/reorder for sections and items,
+      keystroke-grouped undo history
+- [x] Phase 5 — single↔two-column mode toggle (side sections fold into main),
+      sidebar position + header placement controls (`LayoutControls`), draggable
+      column divider in the preview (cross-column section DnD landed in the shell)
+- [ ] Phase 6 — remaining templates (Classic/Minimalist/Two-Column pickers), spacing & theme inspectors
+- [ ] Phase 7 — multi-resume polish, export toast with Reveal in Finder
 
-## Deploy on Vercel
+## Dev smoke tests (require `npm run dev` in another terminal)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+node scripts/editor-smoke.mjs <resumeId>   # editor loads, no client errors, autosave fires
+node scripts/dnd-smoke.mjs <resumeId>      # drag-reorder persists to disk
+node scripts/parity-check.mjs [--keep]     # pixel-diffs exported PDFs vs preview for the
+                                           # active resume + 4 stress fixtures (long bullets,
+                                           # tiny margins, oversized block, two-column)
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Architecture notes
+
+- **Style cascade:** template tokens → per-resume `themeOverrides` → per-section
+  `style` overrides, all expressed as CSS custom properties (`--rs-*` on the
+  document root, `--sec-*` inline per section). One mechanism for screen and print.
+- **Template switching is non-destructive:** content is never touched; section
+  ids are re-slotted between columns (`src/lib/templates/index.ts#applyTemplate`).
+- **DnD is isolated:** only `src/components/editor/dnd/SortableColumns.tsx`
+  knows about dnd-kit; everything else calls `onMove(sectionId, column, index)`.

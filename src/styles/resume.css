@@ -1,0 +1,288 @@
+/*
+ * Resume document styles — used identically by the editor preview and the
+ * /print route. All dimensions are mm/pt so Chromium's CSS→PDF unit mapping
+ * is exact. Theme tokens arrive as --rs-* custom properties set inline by
+ * ResumeDocument; per-section overrides as --sec-* on each block.
+ *
+ * Vertical rhythm (section gaps, item gaps) is NOT expressed here: the
+ * paginator computes it as data (src/lib/pagination/blocks.tsx) and applies
+ * it as inline margin-top on .pg-block, so gaps can be dropped at page tops.
+ */
+
+.resume-root {
+  font-family: var(--rs-font-body);
+  font-size: var(--rs-fs-base);
+  line-height: var(--rs-lh-body);
+  color: var(--rs-c-text);
+  hyphens: none;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+/* ---------- discrete pages ---------- */
+
+.pg-pages--screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10mm;
+}
+
+.pg-page {
+  position: relative;
+  box-sizing: border-box;
+  width: 210mm;
+  height: 297mm;
+  overflow: hidden;
+  background: #ffffff;
+  padding: var(--rs-pm-top) var(--rs-pm-right) var(--rs-pm-bottom) var(--rs-pm-left);
+  display: flex;
+  flex-direction: column;
+}
+
+.pg-page--screen {
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.2), 0 8px 24px rgb(0 0 0 / 0.12);
+}
+
+.pg-columns {
+  position: relative; /* anchors the editor's column-divider handle */
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  align-items: stretch;
+}
+
+/* Editor-only draggable divider between the two columns. */
+.pg-col-resizer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3mm;
+  transform: translateX(-50%);
+  cursor: col-resize;
+  touch-action: none;
+}
+.pg-col-resizer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 0.5mm;
+  transform: translateX(-50%);
+  background: transparent;
+}
+.pg-col-resizer:hover::after,
+.pg-col-resizer--active::after {
+  background: rgb(37 99 235 / 0.5);
+}
+
+.pg-col {
+  min-width: 0;
+}
+
+.pg-col--side {
+  background: var(--rs-c-sidebar-bg);
+  padding: 4mm; /* SIDE_PAD_MM — keep in sync with PaginatedPages.tsx */
+  border-radius: 1mm;
+}
+
+/* Atomic block: flow-root contains inner margins so a block's measured
+ * height is its full visual height; inter-block gaps arrive as inline
+ * margin-top from the paginator. */
+.pg-block {
+  display: flow-root;
+  font-size: var(--sec-fs, inherit);
+  line-height: var(--sec-lh, inherit);
+  padding-left: var(--sec-px, 0mm);
+  padding-right: var(--sec-px, 0mm);
+}
+
+.pg-block--overflow {
+  outline: 0.6mm solid #dc2626;
+  outline-offset: 0.5mm;
+}
+
+/* Hidden measurement pass — identical classes/vars/widths as real pages.
+ * height:0 + overflow:hidden clips its ink overflow so the (multi-page-tall)
+ * measurement content never extends the printable area; children still lay
+ * out at full size, so getBoundingClientRect measures real heights. */
+.pg-measure {
+  position: absolute;
+  top: 0;
+  left: -100000px;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ---------- editor-only page guides ---------- */
+
+.pg-overlay-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgb(37 99 235 / 0.05);
+  border-top: 0.3mm dashed rgb(37 99 235 / 0.4);
+  pointer-events: none;
+}
+
+.pg-overlay-badge {
+  position: absolute;
+  right: 2mm;
+  bottom: 2mm;
+  background: #1e293b;
+  color: #e2e8f0;
+  font-family: var(--font-inter);
+  font-size: 7pt;
+  line-height: 1.4;
+  padding: 0.8mm 2mm;
+  border-radius: 1mm;
+  pointer-events: none;
+}
+
+/* ---------- header ---------- */
+
+.rs-header {
+  display: flex;
+  align-items: center;
+  gap: 6mm;
+}
+
+.rs-photo {
+  flex: none;
+  object-fit: cover;
+  width: var(--rs-photo-size);
+  height: var(--rs-photo-size);
+}
+.rs-photo--circle { border-radius: 50%; }
+.rs-photo--rounded { border-radius: 2mm; }
+
+.rs-name {
+  font-family: var(--rs-font-heading);
+  font-size: var(--rs-fs-name);
+  line-height: var(--rs-lh-heading);
+  font-weight: 700;
+  color: var(--rs-c-heading);
+}
+
+.rs-headline {
+  margin-top: 1mm;
+  font-size: var(--rs-fs-item-title);
+  font-weight: 500;
+  color: var(--rs-c-accent);
+}
+
+.rs-contacts {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 4mm;
+  row-gap: 0.8mm;
+  margin-top: 2mm;
+  font-size: var(--rs-fs-meta);
+  color: var(--rs-c-muted);
+}
+
+.rs-summary {
+  margin-top: 3mm;
+}
+
+/* ---------- section titles ---------- */
+
+.rs-section-title {
+  font-family: var(--rs-font-heading);
+  font-size: var(--sec-title-fs, var(--rs-fs-section-title));
+  line-height: var(--rs-lh-heading);
+  font-weight: 700;
+  color: var(--rs-c-heading);
+  margin-bottom: 2mm;
+}
+.rs-section-title--accent-bar {
+  border-left: 1mm solid var(--rs-c-accent);
+  padding-left: 2.5mm;
+}
+.rs-section-title--underline {
+  border-bottom: 0.3mm solid var(--rs-c-rule);
+  padding-bottom: 1mm;
+}
+.rs-section-title--caps,
+.rs-section-title--accent-bar {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ---------- items ---------- */
+
+.rs-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4mm;
+}
+
+.rs-item-title {
+  font-size: var(--rs-fs-item-title);
+  font-weight: 600;
+  color: var(--rs-c-heading);
+}
+
+.rs-item-sub {
+  color: var(--rs-c-accent);
+  font-weight: 500;
+}
+
+.rs-item-meta {
+  flex: none;
+  font-size: var(--rs-fs-meta);
+  color: var(--rs-c-muted);
+  text-align: right;
+}
+
+.rs-item-summary {
+  margin-top: 0.8mm;
+}
+
+.rs-bullets {
+  margin: 0.8mm 0 0;
+  padding-left: 4mm;
+  list-style: disc;
+}
+.rs-bullets li + li { margin-top: var(--rs-bullet-gap); }
+.rs-bullets li::marker { color: var(--rs-c-accent); }
+
+/* ---------- skills ---------- */
+
+.rs-skill-group-name {
+  font-weight: 600;
+  color: var(--rs-c-heading);
+}
+
+.rs-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5mm;
+  margin-top: 1mm;
+}
+
+.rs-tag {
+  border: 0.25mm solid var(--rs-c-rule);
+  border-radius: 1mm;
+  padding: 0.5mm 1.8mm;
+  font-size: var(--rs-fs-meta);
+}
+
+.rs-level {
+  display: inline-flex;
+  gap: 0.8mm;
+  margin-left: 1.5mm;
+  vertical-align: baseline;
+}
+.rs-level-dot {
+  width: 1.6mm;
+  height: 1.6mm;
+  border-radius: 50%;
+  background: var(--rs-c-rule);
+}
+.rs-level-dot--on { background: var(--rs-c-accent); }
