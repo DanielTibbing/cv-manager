@@ -169,20 +169,25 @@ export function PaginatedPages({
     d: BlockDef,
     marginTopPx: number,
     forMeasure = false
-  ) => (
-    <div
-      key={d.id}
-      {...(forMeasure ? { "data-mid": d.id } : {})}
-      className={`pg-block${
-        !forMeasure && chrome === "screen" && layout?.overflowIds.has(d.id)
-          ? " pg-block--overflow"
-          : ""
-      }`}
-      style={{ ...d.vars, marginTop: `${marginTopPx}px` }}
-    >
-      {d.node}
-    </div>
-  );
+  ) => {
+    const overflow =
+      !forMeasure && chrome === "screen" && layout?.overflowIds.has(d.id);
+    return (
+      <div
+        key={d.id}
+        {...(forMeasure ? { "data-mid": d.id } : {})}
+        className={`pg-block${overflow ? " pg-block--overflow" : ""}`}
+        title={
+          overflow
+            ? "This block is taller than one page and will be clipped in the PDF — split it into smaller items or reduce its content."
+            : undefined
+        }
+        style={{ ...d.vars, marginTop: `${marginTopPx}px` }}
+      >
+        {d.node}
+      </div>
+    );
+  };
 
   // A page assignment can transiently reference blocks that no longer exist
   // (section just added/removed/undone: flows rebuild synchronously, the

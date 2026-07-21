@@ -2,6 +2,7 @@
 
 import type { Section } from "@/lib/schema";
 import { useResumeStore } from "@/store/resumeStore";
+import { SpacingInspector } from "../inspector/SpacingInspector";
 import { TextInput } from "./fields";
 import { ExperienceForm } from "./ExperienceForm";
 import { EducationForm } from "./EducationForm";
@@ -38,6 +39,7 @@ export function SectionForm({ section }: { section: Section }) {
           })
         }
       />
+      <SpacingInspector section={section} />
       <KindForm section={section} />
     </div>
   );

@@ -2,9 +2,11 @@
 
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
+import { current } from "immer";
 import { temporal } from "zundo";
-import type { Resume, SectionKind } from "@/lib/schema";
+import type { Resume, SectionKind, TemplateId } from "@/lib/schema";
 import { newSection } from "@/lib/defaults";
+import { applyTemplate } from "@/lib/templates";
 
 export type ColumnKey = "main" | "side";
 export type SaveState = "idle" | "saving" | "saved" | "error";
@@ -18,6 +20,7 @@ interface EditorState {
   update: (mutate: (draft: Resume) => void) => void;
   moveSection: (sectionId: string, toColumn: ColumnKey, toIndex: number) => void;
   setLayoutMode: (mode: Resume["layout"]["mode"]) => void;
+  switchTemplate: (templateId: TemplateId) => void;
   toggleSectionVisible: (sectionId: string) => void;
   addSection: (kind: SectionKind) => string;
   removeSection: (sectionId: string) => void;
@@ -51,6 +54,14 @@ export const useResumeStore = create<EditorState>()(
           }
           const target = layout.columns[toColumn];
           target.splice(Math.min(toIndex, target.length), 0, sectionId);
+        }),
+
+      // Non-destructive: content untouched, section ids re-slotted per the
+      // template's default layout, themeOverrides reset (caller confirms).
+      switchTemplate: (templateId) =>
+        set((state) => {
+          if (!state.resume) return;
+          state.resume = applyTemplate(current(state.resume), templateId);
         }),
 
       setLayoutMode: (mode) =>

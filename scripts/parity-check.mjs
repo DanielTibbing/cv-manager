@@ -157,6 +157,26 @@ const FIXTURES = [
       resume.layout.columns = { main: [exp.id], side: [skills.id, edu.id] };
     },
   },
+  // Remaining templates, so every template's fonts (incl. Source Serif) and
+  // title styles stay parity-covered.
+  {
+    name: "classic",
+    templateId: "classic",
+    mutate(resume) {
+      const sections = [experienceSection(4, 6), educationSection(3)];
+      resume.sections = sections;
+      resume.layout.columns = { main: sections.map((s) => s.id), side: [] };
+    },
+  },
+  {
+    name: "minimalist",
+    templateId: "minimalist",
+    mutate(resume) {
+      const sections = [experienceSection(4, 6), skillsSection(4, 6)];
+      resume.sections = sections;
+      resume.layout.columns = { main: sections.map((s) => s.id), side: [] };
+    },
+  },
 ];
 
 // ---------- helpers ----------

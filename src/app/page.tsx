@@ -54,6 +54,18 @@ export default function ManagerPage() {
     refresh();
   };
 
+  const rename = async (id: string, currentName: string) => {
+    const name = window.prompt("New name:", currentName);
+    if (!name || name === currentName) return;
+    const resume = await (await fetch(`/api/resumes/${id}`)).json();
+    await fetch(`/api/resumes/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...resume, name }),
+    });
+    refresh();
+  };
+
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
       <div className="mb-6 flex items-center justify-between">
@@ -75,6 +87,12 @@ export default function ManagerPage() {
 
       {error && <p className="text-sm text-red-600">{error}</p>}
       {!index && !error && <p className="text-sm text-slate-400">Loading…</p>}
+
+      {index && index.resumes.length === 0 && (
+        <div className="rounded-lg border border-dashed border-slate-300 px-6 py-10 text-center text-sm text-slate-400">
+          No resumes yet — click “New resume” to create your first one.
+        </div>
+      )}
 
       {index && (
         <ul className="flex flex-col gap-3">
@@ -117,6 +135,13 @@ export default function ManagerPage() {
                 >
                   Edit
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => rename(resume.id, resume.name)}
+                  className="rounded px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
+                >
+                  Rename
+                </button>
                 <button
                   type="button"
                   onClick={() => duplicate(resume.id)}

@@ -58,8 +58,14 @@ guarantee by pixel-diffing exported PDF pages against preview screenshots
 - [x] Phase 5 — single↔two-column mode toggle (side sections fold into main),
       sidebar position + header placement controls (`LayoutControls`), draggable
       column divider in the preview (cross-column section DnD landed in the shell)
-- [ ] Phase 6 — remaining templates (Classic/Minimalist/Two-Column pickers), spacing & theme inspectors
-- [ ] Phase 7 — multi-resume polish, export toast with Reveal in Finder
+- [x] Phase 6 — TemplatePicker with non-destructive switching (content survives, theme
+      tweaks reset with confirm), per-section SpacingInspector (mm/pt/line-height
+      overrides with reset-to-template), ThemeInspector (fonts, sizes, colors, page
+      margins, spacing) — parity fixtures now cover all four templates
+- [x] Phase 7 — export toast with Reveal in Finder (`/api/reveal`, exports/-scoped,
+      macOS), rename on the manager page, overflow-warning tooltips, empty states
+
+All roadmap phases are complete.
 
 ## Dev smoke tests (require `npm run dev` in another terminal)
 
@@ -67,8 +73,9 @@ guarantee by pixel-diffing exported PDF pages against preview screenshots
 node scripts/editor-smoke.mjs <resumeId>   # editor loads, no client errors, autosave fires
 node scripts/dnd-smoke.mjs <resumeId>      # drag-reorder persists to disk
 node scripts/parity-check.mjs [--keep]     # pixel-diffs exported PDFs vs preview for the
-                                           # active resume + 4 stress fixtures (long bullets,
-                                           # tiny margins, oversized block, two-column)
+                                           # active resume + 6 fixtures (long bullets, tiny
+                                           # margins, oversized block, and the two-column,
+                                           # classic and minimalist templates)
 ```
 
 ## Architecture notes
