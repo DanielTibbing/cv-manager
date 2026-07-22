@@ -1,36 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ResumeSchema } from "@/lib/schema";
+import { LetterSchema } from "@/lib/schema";
 import {
   ConflictError,
-  deleteResume,
-  readResume,
-  writeResume,
+  deleteLetter,
+  readLetter,
+  writeLetter,
 } from "@/lib/storage";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const { id } = await params;
-  const resume = await readResume(id);
-  if (!resume) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json(resume);
+  const letter = await readLetter(id);
+  if (!letter) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return NextResponse.json(letter);
 }
 
 export async function PUT(req: NextRequest, { params }: Params) {
   const { id } = await params;
-  const parsed = ResumeSchema.safeParse(await req.json());
+  const parsed = LetterSchema.safeParse(await req.json());
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
   }
   if (parsed.data.id !== id) {
     return NextResponse.json({ error: "Body id does not match URL" }, { status: 400 });
   }
-  const existing = await readResume(id);
+  const existing = await readLetter(id);
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
   try {
-    // Conflict detection is opt-in via header so scripted PUTs (parity
-    // fixtures, manager rename) keep working without version bookkeeping.
-    const saved = await writeResume(parsed.data, {
+    const saved = await writeLetter(parsed.data, {
       baseUpdatedAt: req.headers.get("x-base-updated-at") ?? undefined,
     });
     return NextResponse.json(saved);
@@ -47,6 +45,6 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const { id } = await params;
-  await deleteResume(id);
+  await deleteLetter(id);
   return NextResponse.json({ ok: true });
 }

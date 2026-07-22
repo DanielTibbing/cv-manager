@@ -14,9 +14,9 @@ import {
   useState,
   type CSSProperties,
 } from "react";
-import type { Resume, ThemeTokens } from "@/lib/schema";
+import type { Layout, ThemeTokens } from "@/lib/schema";
 import { A4, mmToPx } from "@/lib/units";
-import { buildFlows, type BlockDef } from "@/lib/pagination/blocks";
+import type { BlockDef, Flows } from "@/lib/pagination/blocks";
 import { paginateFlow, type PageFlow } from "@/lib/pagination/paginate";
 import { PageChromeOverlay } from "./PageChromeOverlay";
 
@@ -32,12 +32,15 @@ interface PageLayout {
 }
 
 export function PaginatedPages({
-  resume,
+  flows,
+  layout,
   tokens,
   chrome,
   onSideWidthChange,
 }: {
-  resume: Resume;
+  // Pre-built block flows — resumes use buildFlows, letters buildLetterFlows.
+  flows: Flows;
+  layout: Layout;
   tokens: ThemeTokens;
   chrome: "screen" | "print";
   // Editor-only: live column-divider drag reporting a new side-column width
@@ -45,10 +48,8 @@ export function PaginatedPages({
   onSideWidthChange?: (percent: number) => void;
 }) {
   const measureRef = useRef<HTMLDivElement>(null);
-  const [layout, setLayout] = useState<PageLayout | null>(null);
+  const [pageLayout, setPageLayout] = useState<PageLayout | null>(null);
   const [measureTick, setMeasureTick] = useState(0);
-
-  const flows = useMemo(() => buildFlows(resume, tokens), [resume, tokens]);
 
   const geometry = useMemo(() => {
     const contentWmm =
@@ -56,16 +57,16 @@ export function PaginatedPages({
     const contentHpx = mmToPx(
       A4.heightMm - tokens.pageMarginMm.top - tokens.pageMarginMm.bottom
     );
-    const twoCol = resume.layout.mode === "two-column";
+    const twoCol = layout.mode === "two-column";
     let mainWmm = contentWmm;
     let sideWmm = 0;
     if (twoCol) {
       const available = contentWmm - tokens.columnGapMm;
-      sideWmm = (available * resume.layout.sideColumnWidthPercent) / 100;
+      sideWmm = (available * layout.sideColumnWidthPercent) / 100;
       mainWmm = available - sideWmm;
     }
     return { contentWmm, contentHpx, mainWmm, sideWmm, twoCol };
-  }, [resume.layout, tokens]);
+  }, [layout, tokens]);
 
   // Measure + paginate. Gated on fonts and images so heights are final;
   // getBoundingClientRect gives fractional heights (the measurement container
@@ -119,7 +120,7 @@ export function PaginatedPages({
       });
 
       if (!cancelled) {
-        setLayout({
+        setPageLayout({
           pageCount,
           main: main.pages,
           side: side.pages,
@@ -171,7 +172,7 @@ export function PaginatedPages({
     forMeasure = false
   ) => {
     const overflow =
-      !forMeasure && chrome === "screen" && layout?.overflowIds.has(d.id);
+      !forMeasure && chrome === "screen" && pageLayout?.overflowIds.has(d.id);
     return (
       <div
         key={d.id}
@@ -198,7 +199,7 @@ export function PaginatedPages({
       return def ? renderBlock(def, pb.marginTopPx) : null;
     }) ?? null;
 
-  const sideFirst = resume.layout.sidePosition === "left";
+  const sideFirst = layout.sidePosition === "left";
   const columnsStyle: CSSProperties = geometry.twoCol
     ? {
         gridTemplateColumns: sideFirst
@@ -248,7 +249,7 @@ export function PaginatedPages({
     chrome === "screen" && geometry.twoCol && onSideWidthChange ? (
       <div
         className="pg-col-resizer"
-        title={`Side column: ${resume.layout.sideColumnWidthPercent}% — drag to resize`}
+        title={`Side column: ${layout.sideColumnWidthPercent}% — drag to resize`}
         style={{
           left: `calc(${sideFirst ? geometry.sideWmm : geometry.mainWmm}mm + ${
             tokens.columnGapMm / 2
@@ -261,7 +262,7 @@ export function PaginatedPages({
   return (
     <div
       className={`pg-pages pg-pages--${chrome}`}
-      data-pagination-ready={layout ? "true" : undefined}
+      data-pagination-ready={pageLayout ? "true" : undefined}
     >
       <div ref={measureRef} className="pg-measure" aria-hidden>
         {flows.banner && (
@@ -282,8 +283,8 @@ export function PaginatedPages({
         )}
       </div>
 
-      {layout &&
-        Array.from({ length: layout.pageCount }, (_, p) => (
+      {pageLayout &&
+        Array.from({ length: pageLayout.pageCount }, (_, p) => (
           <div
             key={p}
             className={`pg-page pg-page--${chrome}`}
@@ -298,16 +299,16 @@ export function PaginatedPages({
                   p === 0 && flows.banner ? `${tokens.sectionGapMm}mm` : 0,
               }}
             >
-              {geometry.twoCol && sideFirst && sideCol(layout.side[p])}
-              <div className="pg-col">{renderFlowPage(layout.main[p])}</div>
-              {geometry.twoCol && !sideFirst && sideCol(layout.side[p])}
+              {geometry.twoCol && sideFirst && sideCol(pageLayout.side[p])}
+              <div className="pg-col">{renderFlowPage(pageLayout.main[p])}</div>
+              {geometry.twoCol && !sideFirst && sideCol(pageLayout.side[p])}
               {resizer}
             </div>
             {chrome === "screen" && (
               <PageChromeOverlay
                 pageIndex={p}
-                pageCount={layout.pageCount}
-                freeMm={layout.freeMmByPage[p]}
+                pageCount={pageLayout.pageCount}
+                freeMm={pageLayout.freeMmByPage[p]}
                 marginBottomMm={tokens.pageMarginMm.bottom}
               />
             )}

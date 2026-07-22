@@ -3,6 +3,7 @@ import type {
   CustomItem,
   EducationItem,
   ExperienceItem,
+  Letter,
   ProjectItem,
   Resume,
   Section,
@@ -11,6 +12,36 @@ import type {
   TemplateId,
 } from "@/lib/schema";
 import { getTemplate } from "@/lib/templates";
+
+export function newLetter(init: {
+  name?: string;
+  resumeId?: string | null;
+  company?: string;
+  role?: string;
+  jobDescription?: string;
+  jobUrl?: string;
+}): Letter {
+  const now = new Date().toISOString();
+  return {
+    version: 1,
+    id: nanoid(10),
+    name:
+      init.name ??
+      (init.company ? `${init.company} — ${init.role || "application"}` : "New letter"),
+    resumeId: init.resumeId ?? null,
+    isBase: false,
+    company: init.company ?? "",
+    role: init.role ?? "",
+    status: "draft",
+    headerStyle: "banner",
+    heading: "Application for {{role}}",
+    body:
+      "Dear hiring team at {{company}},\n\nWhy I am a great fit for the {{role}} position…\n\nBest regards,\n",
+    job: { description: init.jobDescription ?? "", url: init.jobUrl || undefined },
+    createdAt: now,
+    updatedAt: now,
+  };
+}
 
 export function newExperienceItem(): ExperienceItem {
   return { id: nanoid(8), role: "", company: "", bullets: [], visible: true };

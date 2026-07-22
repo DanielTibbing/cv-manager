@@ -1,8 +1,9 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useMemo } from "react";
 import type { Resume } from "@/lib/schema";
-import { resolveTokens } from "@/lib/templates";
+import { resolveTokens, tokensToCssVars } from "@/lib/templates";
+import { buildFlows } from "@/lib/pagination/blocks";
 import { PaginatedPages } from "./PaginatedPages";
 
 // Shared verbatim by the editor preview (chrome="screen") and the /print
@@ -17,36 +18,19 @@ export function ResumeDocument({
   chrome: "screen" | "print";
   onSideWidthChange?: (percent: number) => void;
 }) {
-  const t = resolveTokens(resume);
-
-  const rootVars = {
-    "--rs-font-heading": t.fontFamilyHeading,
-    "--rs-font-body": t.fontFamilyBody,
-    "--rs-fs-base": `${t.fontSizeBasePt}pt`,
-    "--rs-fs-name": `${t.fontSizeNamePt}pt`,
-    "--rs-fs-section-title": `${t.fontSizeSectionTitlePt}pt`,
-    "--rs-fs-item-title": `${t.fontSizeItemTitlePt}pt`,
-    "--rs-fs-meta": `${t.fontSizeMetaPt}pt`,
-    "--rs-lh-body": t.lineHeightBody,
-    "--rs-lh-heading": t.lineHeightHeading,
-    "--rs-c-text": t.colorText,
-    "--rs-c-heading": t.colorHeading,
-    "--rs-c-accent": t.colorAccent,
-    "--rs-c-muted": t.colorMuted,
-    "--rs-c-rule": t.colorRule,
-    "--rs-c-sidebar-bg": t.colorSidebarBg,
-    "--rs-pm-top": `${t.pageMarginMm.top}mm`,
-    "--rs-pm-right": `${t.pageMarginMm.right}mm`,
-    "--rs-pm-bottom": `${t.pageMarginMm.bottom}mm`,
-    "--rs-pm-left": `${t.pageMarginMm.left}mm`,
-    "--rs-bullet-gap": `${t.bulletGapMm}mm`,
-  } as CSSProperties;
+  const tokens = useMemo(() => resolveTokens(resume), [resume]);
+  const flows = useMemo(() => buildFlows(resume, tokens), [resume, tokens]);
 
   return (
-    <div className="resume-root" data-resume-id={resume.id} style={rootVars}>
+    <div
+      className="resume-root"
+      data-resume-id={resume.id}
+      style={tokensToCssVars(tokens)}
+    >
       <PaginatedPages
-        resume={resume}
-        tokens={t}
+        flows={flows}
+        layout={resume.layout}
+        tokens={tokens}
         chrome={chrome}
         onSideWidthChange={onSideWidthChange}
       />

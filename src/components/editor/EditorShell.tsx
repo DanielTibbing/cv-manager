@@ -7,6 +7,7 @@ import type { Resume, SectionKind } from "@/lib/schema";
 import { useResumeStore } from "@/store/resumeStore";
 import { ResumeDocument } from "@/components/resume/ResumeDocument";
 import { SortableColumns, type DragHandleProps } from "./dnd/SortableColumns";
+import { useDocumentAutosave } from "./useDocumentAutosave";
 import { ProfileForm } from "./forms/ProfileForm";
 import { SectionForm } from "./forms/SectionForm";
 import { LayoutControls } from "./LayoutControls";
@@ -21,37 +22,21 @@ const KIND_LABEL: Record<SectionKind, string> = {
   custom: "Custom",
 };
 
-// Debounced autosave: any document change (edits, reorders, undo/redo)
-// lands in data/resumes/{id}.json 800ms after the last change.
+// Debounced autosave with stale-tab conflict detection — shared hook, wired
+// to the resume store.
 function useAutosave() {
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const unsubscribe = useResumeStore.subscribe((state, prev) => {
-      const next = state.resume;
-      if (!next || !prev.resume || prev.resume === next) return;
-      if (prev.resume.id !== next.id) return; // a different resume was loaded
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(async () => {
-        const { resume, setSaveState } = useResumeStore.getState();
-        if (!resume) return;
-        setSaveState("saving");
-        try {
-          const res = await fetch(`/api/resumes/${resume.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(resume),
-          });
-          setSaveState(res.ok ? "saved" : "error");
-        } catch {
-          setSaveState("error");
-        }
-      }, 800);
-    });
-    return () => {
-      unsubscribe();
-      if (timer) clearTimeout(timer);
-    };
-  }, []);
+  useDocumentAutosave({
+    subscribeDoc: (listener) =>
+      useResumeStore.subscribe((state, prev) =>
+        listener(state.resume, prev.resume)
+      ),
+    getDoc: () => useResumeStore.getState().resume,
+    endpoint: (id) => `/api/resumes/${id}`,
+    getBaseUpdatedAt: () =>
+      useResumeStore.getState().serverUpdatedAt ?? undefined,
+    setSaveState: (s) => useResumeStore.getState().setSaveState(s),
+    onSaved: (saved) => useResumeStore.getState().ackSave(saved.updatedAt),
+  });
 }
 
 function Chevron({ open }: { open: boolean }) {
@@ -233,6 +218,7 @@ const SAVE_LABEL: Record<string, string> = {
   saving: "Saving…",
   saved: "Saved",
   error: "Save failed — retrying on next change",
+  conflict: "⚠ Edited elsewhere — reload this tab to continue",
 };
 
 export function EditorShell({ initial }: { initial: Resume }) {

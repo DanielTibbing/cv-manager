@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { ResumeIndex } from "@/lib/schema";
+import { LetterList } from "@/components/manager/LetterList";
 
 export default function ManagerPage() {
   const [index, setIndex] = useState<ResumeIndex | null>(null);
@@ -160,6 +161,13 @@ export default function ManagerPage() {
             );
           })}
         </ul>
+      )}
+
+      {index && (
+        <LetterList
+          resumes={index.resumes}
+          activeResumeId={index.activeResumeId}
+        />
       )}
     </div>
   );

@@ -1,8 +1,9 @@
 # CV Manager
 
-Personal, single-user, **local-first** resume builder. Runs entirely on your
-machine: resume data is JSON files on disk, the editor is a local Next.js app,
-and PDF export renders through headless Chrome for pixel-faithful A4 output.
+Personal, single-user, **local-first** resume and cover-letter builder. Runs
+entirely on your machine: data is JSON files on disk, the editor is a local
+Next.js app, and PDF export renders through headless Chrome for pixel-faithful
+A4 output.
 
 ## Quick start
 
@@ -15,11 +16,28 @@ First run seeds a sample resume. Data layout:
 
 | Path | Contents |
 |---|---|
-| `data/index.json` | Resume list + which one is "active" |
+| `data/index.json` | Resume + letter lists, and which resume is "active" |
 | `data/resumes/{id}.json` | One resume document each (zod-validated, versioned) |
-| `data/backups/` | Rolling backups, last 20 writes per resume |
+| `data/letters/{id}.json` | One personal letter each |
+| `data/backups/` | Rolling backups, last 20 writes per document |
 | `data/uploads/` | Profile photos |
 | `exports/` | Generated PDFs |
+
+## Personal letters
+
+Cover letters live beside resumes and **inherit their entire visual identity
+from a linked resume** — same fonts, colors, and header (full banner or a
+compact photo-less variant) — so an application reads as one package. The
+workflow is built for volume: write one generic letter with `{{company}}` /
+`{{role}}` placeholders and mark it as a *base*; "New letter" then copies the
+base, fills the placeholders from the application's company/role fields, and
+opens the editor with the pasted job description in a reference panel beside
+the text. Letters carry a lightweight application status
+(draft → sent → interview → offer/rejected) and the letters list is
+searchable/filterable. Exports are blocked while placeholders are unfilled,
+so a template artifact can never reach a PDF. Letter saves (and resume-editor
+saves) carry a base-version header; a stale tab gets a 409 and a "reload to
+continue" banner instead of silently overwriting newer edits.
 
 ## How PDF fidelity works
 
@@ -77,9 +95,10 @@ All roadmap phases are complete.
 node scripts/editor-smoke.mjs <resumeId>   # editor loads, no client errors, autosave fires
 node scripts/dnd-smoke.mjs <resumeId>      # drag-reorder persists to disk
 node scripts/parity-check.mjs [--keep]     # pixel-diffs exported PDFs vs preview for the
-                                           # active resume + 6 fixtures (long bullets, tiny
-                                           # margins, oversized block, and the two-column,
-                                           # classic and minimalist templates)
+                                           # active resume + 6 resume fixtures + 4 letter
+                                           # fixtures (one-page, multi-page, compact header,
+                                           # two-column tokens), and asserts unfilled
+                                           # placeholders block export (400)
 ```
 
 ## Architecture notes

@@ -15,15 +15,16 @@ await page.setViewport({ width: 1600, height: 1000 });
 await page.goto(`http://localhost:3000/editor/${resumeId}`, {
   waitUntil: "networkidle0",
 });
-await page.waitForSelector("aside .cursor-grab");
+await page.waitForSelector('aside [title="Drag to reorder"]');
 
 const order = () =>
-  page.$$eval("aside .cursor-grab", (els) =>
-    els.map((el) => el.querySelector(".text-sm")?.textContent)
+  page.$$eval('aside [title="Drag to reorder"]', (els) =>
+    els.map((el) => el.closest(".rounded-md")?.querySelector(".text-sm")?.textContent)
   );
 
 const before = await order();
-const cards = await page.$$("aside .cursor-grab");
+// Dragging is grip-based since the forms landed — grab the ⠿ handles.
+const cards = await page.$$('aside [title="Drag to reorder"]');
 const a = await cards[0].boundingBox();
 const b = await cards[1].boundingBox();
 

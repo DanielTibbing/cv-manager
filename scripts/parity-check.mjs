@@ -213,11 +213,11 @@ async function rasterizePdf(filePath) {
   return pages;
 }
 
-async function screenshotPreviewPages(browser, resumeId) {
+async function screenshotPreviewPages(browser, printPath) {
   const page = await browser.newPage();
   try {
     await page.setViewport({ width: 1000, height: 1400, deviceScaleFactor: SCALE });
-    await page.goto(`${BASE}/print/${resumeId}`, { waitUntil: "networkidle0" });
+    await page.goto(`${BASE}${printPath}`, { waitUntil: "networkidle0" });
     await page.waitForSelector('[data-pagination-ready="true"]', {
       timeout: 15_000,
     });
@@ -280,14 +280,20 @@ async function comparePage(pdfCanvas, shotBuffer, diffPath) {
 
 // ---------- main ----------
 
+const LETTER_PARAGRAPH =
+  "I have spent the last decade building platforms and teams, and the combination of hands-on engineering depth with people leadership is exactly what draws me to this position at {{company}}. My experience spans frontend architecture, developer platforms, and growing engineers into senior roles.";
+
 await fs.mkdir(OUT_DIR, { recursive: true });
 const browser = await puppeteer.launch({ headless: true });
 const createdIds = [];
+const createdLetterIds = [];
 let failed = false;
 
 try {
   const index = await api("GET", "/api/resumes");
-  const targets = [{ name: "active-resume", id: index.activeResumeId }];
+  const targets = [
+    { name: "active-resume", id: index.activeResumeId, kind: "resume" },
+  ];
 
   for (const fixture of FIXTURES) {
     const created = await api("POST", "/api/resumes", {
@@ -297,14 +303,119 @@ try {
     createdIds.push(created.id);
     fixture.mutate(created);
     await api("PUT", `/api/resumes/${created.id}`, created);
-    targets.push({ name: fixture.name, id: created.id });
+    targets.push({ name: fixture.name, id: created.id, kind: "resume" });
+  }
+
+  // ---------- letter fixtures ----------
+  // A styled resume to link against, so the letter banner has real identity
+  // content and inherits non-default tokens.
+  const PROFILE = {
+    fullName: "Parity Person",
+    headline: "Letter Fixture Engineer",
+    summary: "Profile summary used to give the letter banner realistic height.",
+    contacts: [
+      { id: "c1", kind: "email", value: "parity@example.com" },
+      { id: "c2", kind: "phone", value: "+46 70 000 00 00" },
+      { id: "c3", kind: "location", value: "Stockholm, Sweden" },
+    ],
+  };
+  const makeStyleResume = async (templateId) => {
+    const created = await api("POST", "/api/resumes", {
+      name: `parity letter-style-${templateId}`,
+      templateId,
+    });
+    createdIds.push(created.id);
+    await api("PUT", `/api/resumes/${created.id}`, {
+      ...created,
+      profile: PROFILE,
+    });
+    return created.id;
+  };
+  const modernStyleId = await makeStyleResume("modern");
+  const twoColStyleId = await makeStyleResume("two-column");
+
+  const makeLetter = async (name, resumeId, patch) => {
+    const created = await api("POST", "/api/letters", {
+      name: `parity ${name}`,
+      resumeId,
+      company: "ParityCo",
+      role: "Fixture Engineer",
+    });
+    createdLetterIds.push(created.id);
+    await api("PUT", `/api/letters/${created.id}`, {
+      ...created,
+      date: "Stockholm, 2026",
+      recipient: "Hiring team\n{{company}}",
+      heading: "Application for {{role}} at {{company}}",
+      body: Array.from({ length: 3 }, () => LETTER_PARAGRAPH).join("\n\n"),
+      ...patch,
+    });
+    return created.id;
+  };
+
+  targets.push(
+    {
+      name: "letter-one-page",
+      id: await makeLetter("letter-one-page", modernStyleId, {}),
+      kind: "letter",
+    },
+    {
+      name: "letter-multi-page",
+      id: await makeLetter("letter-multi-page", modernStyleId, {
+        body: Array.from(
+          { length: 16 },
+          (_, i) => `(${i + 1}) ${LETTER_PARAGRAPH}`
+        ).join("\n\n"),
+      }),
+      kind: "letter",
+    },
+    {
+      name: "letter-compact-header",
+      id: await makeLetter("letter-compact-header", modernStyleId, {
+        headerStyle: "compact",
+      }),
+      kind: "letter",
+    },
+    {
+      // Two-column template tokens must apply, but a letter renders single
+      // column regardless.
+      name: "letter-twocol-tokens",
+      id: await makeLetter("letter-twocol-tokens", twoColStyleId, {}),
+      kind: "letter",
+    }
+  );
+
+  // Non-visual assertion: exporting with an unfilled placeholder is blocked.
+  {
+    const guardId = await makeLetter("letter-guard", modernStyleId, {
+      company: "",
+    });
+    const res = await fetch(`${BASE}/api/export/letter/${guardId}`, {
+      method: "POST",
+    });
+    if (res.status === 400) {
+      console.log("✓ unfilled-placeholder export blocked (400)");
+    } else {
+      console.error(
+        `✗ unfilled-placeholder export returned ${res.status}, expected 400`
+      );
+      failed = true;
+    }
   }
 
   for (const target of targets) {
-    const { filePath } = await api("POST", `/api/export/${target.id}`);
+    const exportPath =
+      target.kind === "letter"
+        ? `/api/export/letter/${target.id}`
+        : `/api/export/${target.id}`;
+    const printPath =
+      target.kind === "letter"
+        ? `/print/letter/${target.id}`
+        : `/print/${target.id}`;
+    const { filePath } = await api("POST", exportPath);
     const [pdfPages, shots] = await Promise.all([
       rasterizePdf(filePath),
-      screenshotPreviewPages(browser, target.id),
+      screenshotPreviewPages(browser, printPath),
     ]);
 
     if (pdfPages.length !== shots.length) {
@@ -329,6 +440,9 @@ try {
 } finally {
   await browser.close();
   if (!KEEP) {
+    for (const id of createdLetterIds) {
+      await api("DELETE", `/api/letters/${id}`).catch(() => undefined);
+    }
     for (const id of createdIds) {
       await api("DELETE", `/api/resumes/${id}`).catch(() => undefined);
     }

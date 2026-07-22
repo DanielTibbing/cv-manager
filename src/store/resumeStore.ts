@@ -9,11 +9,15 @@ import { newSection } from "@/lib/defaults";
 import { applyTemplate } from "@/lib/templates";
 
 export type ColumnKey = "main" | "side";
-export type SaveState = "idle" | "saving" | "saved" | "error";
+export type SaveState = "idle" | "saving" | "saved" | "error" | "conflict";
 
 interface EditorState {
   resume: Resume | null;
   saveState: SaveState;
+  // Last server-acknowledged version, sent as the save's base version so a
+  // stale tab gets a 409 instead of clobbering (kept outside undo history).
+  serverUpdatedAt: string | null;
+  ackSave: (updatedAt: string) => void;
   load: (resume: Resume) => void;
   // General-purpose edit: mutate the draft, autosave is scheduled by the
   // store subscription in EditorShell.
@@ -32,11 +36,19 @@ export const useResumeStore = create<EditorState>()(
     immer((set) => ({
       resume: null,
       saveState: "idle",
+      serverUpdatedAt: null,
+
+      ackSave: (updatedAt) =>
+        set((state) => {
+          state.serverUpdatedAt = updatedAt;
+          state.saveState = "saved";
+        }),
 
       load: (resume) =>
         set((state) => {
           state.resume = resume;
           state.saveState = "idle";
+          state.serverUpdatedAt = resume.updatedAt;
         }),
 
       update: (mutate) =>

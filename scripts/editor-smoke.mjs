@@ -25,7 +25,10 @@ await page.goto(`http://localhost:3000/editor/${resumeId}`, {
 });
 await page.waitForSelector('[data-pagination-ready="true"]', { timeout: 10000 });
 
-const sectionCards = await page.$$eval("aside .cursor-grab", (els) => els.length);
+const sectionCards = await page.$$eval(
+  'aside [title="Drag to reorder"]',
+  (els) => els.length
+);
 
 // Edit the resume name and confirm the debounced autosave fires.
 await page.click("header input");

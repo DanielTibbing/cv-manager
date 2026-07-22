@@ -252,6 +252,48 @@
 .rs-bullets li + li { margin-top: var(--rs-bullet-gap); }
 .rs-bullets li::marker { color: var(--rs-c-accent); }
 
+/* ---------- letters ---------- */
+
+.lt-date {
+  font-size: var(--rs-fs-meta);
+  color: var(--rs-c-muted);
+  text-align: right;
+}
+
+.lt-recipient {
+  font-size: var(--rs-fs-base);
+  color: var(--rs-c-heading);
+}
+
+.lt-paragraph {
+  margin: 0;
+}
+
+.lt-ph-missing {
+  background: rgb(220 38 38 / 0.12);
+  color: inherit;
+  text-decoration: underline wavy rgb(220 38 38 / 0.6);
+  text-underline-offset: 2px;
+}
+
+.lt-compact-header .lt-compact-name {
+  font-family: var(--rs-font-heading);
+  font-size: calc(var(--rs-fs-name) * 0.62);
+  line-height: var(--rs-lh-heading);
+  font-weight: 700;
+  color: var(--rs-c-heading);
+}
+
+.lt-compact-header .lt-compact-headline {
+  font-size: var(--rs-fs-item-title);
+  font-weight: 500;
+  color: var(--rs-c-accent);
+}
+
+.lt-compact-header .rs-contacts {
+  margin-top: 1mm;
+}
+
 /* ---------- consultant sub-positions ---------- */
 
 .rs-subpositions {

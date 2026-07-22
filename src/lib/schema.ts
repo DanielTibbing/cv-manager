@@ -234,6 +234,66 @@ export const ResumeSchema = z.object({
 });
 export type Resume = z.infer<typeof ResumeSchema>;
 
+// ---------- personal letters (cover letters) ----------
+
+export const LetterStatusSchema = z.enum([
+  "draft",
+  "sent",
+  "interview",
+  "offer",
+  "rejected",
+]);
+export type LetterStatus = z.infer<typeof LetterStatusSchema>;
+
+export const LetterJobSchema = z.object({
+  // Pasted job-description text, shown in the editor's reference panel.
+  description: z.string(),
+  url: z.string().optional(),
+});
+
+// Captured only when the linked resume is deleted, so the letter keeps
+// rendering with the same styling and identity.
+export const LetterSnapshotSchema = z.object({
+  templateId: TemplateIdSchema,
+  themeOverrides: ThemeTokensSchema.partial(),
+  profile: ProfileSchema,
+});
+export type LetterSnapshot = z.infer<typeof LetterSnapshotSchema>;
+
+export const LetterSchema = z.object({
+  version: z.literal(1),
+  id: z.string(),
+  name: z.string(), // internal label, e.g. "Apollo — Engineering Manager"
+  resumeId: z.string().nullable(), // styling + profile source
+  snapshot: LetterSnapshotSchema.optional(),
+  isBase: z.boolean(), // base/template letter for "new from base"
+  company: z.string(), // fills {{company}}
+  role: z.string(), // fills {{role}}
+  status: LetterStatusSchema.default("draft"),
+  headerStyle: z.enum(["banner", "compact"]).default("banner"),
+  date: z.string().optional(), // free-form display date; unset = not rendered
+  recipient: z.string().optional(), // multi-line block; unset = not rendered
+  heading: z.string(), // e.g. "Application for {{role}} at {{company}}"
+  body: z.string(), // plain text; blank line = new paragraph
+  job: LetterJobSchema,
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type Letter = z.infer<typeof LetterSchema>;
+
+export const LetterIndexEntrySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  company: z.string(),
+  role: z.string(),
+  status: LetterStatusSchema,
+  resumeId: z.string().nullable(),
+  isBase: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type LetterIndexEntry = z.infer<typeof LetterIndexEntrySchema>;
+
 // ---------- multi-resume index ----------
 
 export const ResumeIndexEntrySchema = z.object({
@@ -249,5 +309,7 @@ export const ResumeIndexSchema = z.object({
   version: z.literal(1),
   activeResumeId: z.string().nullable(),
   resumes: z.array(ResumeIndexEntrySchema),
+  // Additive with a default: existing index.json files parse unchanged.
+  letters: z.array(LetterIndexEntrySchema).default([]),
 });
 export type ResumeIndex = z.infer<typeof ResumeIndexSchema>;
