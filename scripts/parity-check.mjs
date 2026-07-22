@@ -334,6 +334,36 @@ try {
   const modernStyleId = await makeStyleResume("modern");
   const twoColStyleId = await makeStyleResume("two-column");
 
+  // Give the modern style resume a photo so banner and compact-photo headers
+  // exercise the image path.
+  {
+    const avatar = createCanvas(120, 120);
+    const ctx = avatar.getContext("2d");
+    ctx.fillStyle = "#0e7490";
+    ctx.fillRect(0, 0, 120, 120);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 56px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("PP", 60, 64);
+    const form = new FormData();
+    form.append(
+      "file",
+      new File([avatar.toBuffer("image/png")], "parity.png", { type: "image/png" })
+    );
+    const upload = await (
+      await fetch(`${BASE}/api/uploads`, { method: "POST", body: form })
+    ).json();
+    const withPhoto = await api("GET", `/api/resumes/${modernStyleId}`);
+    await api("PUT", `/api/resumes/${modernStyleId}`, {
+      ...withPhoto,
+      profile: {
+        ...withPhoto.profile,
+        photo: { file: upload.file, shape: "circle", sizeMm: 26 },
+      },
+    });
+  }
+
   const makeLetter = async (name, resumeId, patch) => {
     const created = await api("POST", "/api/letters", {
       name: `parity ${name}`,
@@ -373,6 +403,13 @@ try {
       name: "letter-compact-header",
       id: await makeLetter("letter-compact-header", modernStyleId, {
         headerStyle: "compact",
+      }),
+      kind: "letter",
+    },
+    {
+      name: "letter-compact-photo",
+      id: await makeLetter("letter-compact-photo", modernStyleId, {
+        headerStyle: "compact-photo",
       }),
       kind: "letter",
     },

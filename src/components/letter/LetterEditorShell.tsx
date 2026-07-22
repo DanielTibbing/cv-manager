@@ -289,6 +289,7 @@ export function LetterEditorShell({
                 options={[
                   { value: "banner", label: "Full banner (like the resume)" },
                   { value: "compact", label: "Compact (no photo)" },
+                  { value: "compact-photo", label: "Compact with photo" },
                 ]}
               />
             </Card>

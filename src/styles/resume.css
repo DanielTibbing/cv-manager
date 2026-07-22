@@ -276,6 +276,12 @@
   text-underline-offset: 2px;
 }
 
+.lt-compact-header {
+  display: flex;
+  align-items: center;
+  gap: 4mm;
+}
+
 .lt-compact-header .lt-compact-name {
   font-family: var(--rs-font-heading);
   font-size: calc(var(--rs-fs-name) * 0.62);

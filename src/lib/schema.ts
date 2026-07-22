@@ -270,7 +270,7 @@ export const LetterSchema = z.object({
   company: z.string(), // fills {{company}}
   role: z.string(), // fills {{role}}
   status: LetterStatusSchema.default("draft"),
-  headerStyle: z.enum(["banner", "compact"]).default("banner"),
+  headerStyle: z.enum(["banner", "compact", "compact-photo"]).default("banner"),
   date: z.string().optional(), // free-form display date; unset = not rendered
   recipient: z.string().optional(), // multi-line block; unset = not rendered
   heading: z.string(), // e.g. "Application for {{role}} at {{company}}"

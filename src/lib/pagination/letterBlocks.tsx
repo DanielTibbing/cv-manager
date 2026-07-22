@@ -94,10 +94,13 @@ export function buildLetterFlows(
       keepWithNext: false,
       vars: {},
       node:
-        letter.headerStyle === "compact" ? (
-          <CompactHeader profile={profile} />
-        ) : (
+        letter.headerStyle === "banner" ? (
           <ProfileHeader profile={profile} />
+        ) : (
+          <CompactHeader
+            profile={profile}
+            showPhoto={letter.headerStyle === "compact-photo"}
+          />
         ),
     },
     main,
