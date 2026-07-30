@@ -1,5 +1,5 @@
 # Builds the unsigned macOS Electron app on every push to main and publishes
-# the dmg as a rolling "Latest build" prerelease (tag: latest).
+# the dmgs as a rolling "Latest build" prerelease (tag: latest).
 name: Build desktop app
 
 on:
@@ -12,7 +12,15 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-latest # Apple Silicon (arm64)
+    strategy:
+      matrix:
+        # electron-builder targets the host arch, so each leg builds its own.
+        include:
+          - os: macos-latest # Apple Silicon
+            arch: arm64
+          - os: macos-13 # Intel
+            arch: x64
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -27,12 +35,28 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/puppeteer
-          key: puppeteer-${{ hashFiles('package-lock.json') }}
+          key: puppeteer-${{ matrix.arch }}-${{ hashFiles('package-lock.json') }}
 
       - run: npm ci
       - run: npx puppeteer browsers install chrome
       # next build → stage standalone + Chrome → electron-builder (unsigned)
       - run: npm run dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dmg-${{ matrix.arch }}
+          path: dist/*.dmg
+          retention-days: 7
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: dmg-*
+          merge-multiple: true
+          path: dist
 
       - name: Publish rolling prerelease
         uses: softprops/action-gh-release@v2
@@ -44,5 +68,6 @@ jobs:
           files: dist/*.dmg
           body: |
             Unsigned local build of CV Manager (${{ github.sha }}).
+            Pick the dmg for your Mac (`arm64` = Apple Silicon, `x64` = Intel).
             After installing, clear the quarantine flag once:
             `xattr -cr "/Applications/CV Manager.app"`

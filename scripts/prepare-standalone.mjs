@@ -34,11 +34,16 @@ await fs.rename(
 
 // 3. Stage the Puppeteer-downloaded Chrome for Testing into build/chrome/.
 //    electron/main.cjs points PUPPETEER_EXECUTABLE_PATH at the bundled copy.
+//    The cache layout is arch-specific (mac_arm-*/chrome-mac-arm64 on Apple
+//    Silicon, mac-*/chrome-mac-x64 on Intel).
+const isArm = process.arch === "arm64";
 const cacheRoot = path.join(os.homedir(), ".cache", "puppeteer", "chrome");
 let candidates = [];
 try {
   candidates = (await fs.readdir(cacheRoot))
-    .filter((d) => d.startsWith("mac_arm-"))
+    .filter((d) =>
+      isArm ? d.startsWith("mac_arm-") : d.startsWith("mac-") && !d.startsWith("mac_arm-")
+    )
     .sort();
 } catch {
   // cache dir missing entirely
@@ -46,7 +51,7 @@ try {
 const chrome = candidates.at(-1);
 if (!chrome) {
   console.error(
-    "No Puppeteer Chrome found in ~/.cache/puppeteer/chrome.\n" +
+    `No Puppeteer Chrome (${process.arch}) found in ~/.cache/puppeteer/chrome.\n` +
       "Run: npx puppeteer browsers install chrome"
   );
   process.exit(1);
@@ -54,7 +59,7 @@ if (!chrome) {
 const appBundle = path.join(
   cacheRoot,
   chrome,
-  "chrome-mac-arm64",
+  isArm ? "chrome-mac-arm64" : "chrome-mac-x64",
   "Google Chrome for Testing.app"
 );
 const chromeDest = path.join(root, "build", "chrome");
