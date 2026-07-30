@@ -23,6 +23,47 @@ First run seeds a sample resume. Data layout:
 | `data/uploads/` | Profile photos |
 | `exports/` | Generated PDFs |
 
+## Desktop app (Electron)
+
+The app can be bundled as a double-clickable macOS app:
+
+```bash
+npm run dist          # next build → stage standalone server + Chromium → electron-builder
+# output: dist/CV Manager-<version>.dmg
+```
+
+The build is unsigned on purpose. After copying the app to `/Applications`
+(or anywhere), clear the quarantine flag once:
+
+```bash
+xattr -cr "/Applications/CV Manager.app"
+```
+
+The packaged app runs the same Next.js server on a loopback port inside an
+Electron window. Data lives in `~/Library/Application Support/cv-manager/`
+(`data/` and `exports/` there override the repo paths via `CV_DATA_DIR` /
+`CV_EXPORTS_DIR`), and PDF export uses a Chromium bundled in the app's
+resources. `npm run electron:dev` gives the dev loop: `next dev` plus an
+Electron window attached to it.
+
+## Moving data between machines
+
+**Export data** (manager page, or `GET /api/backup`) downloads a zip of all
+resumes, letters, uploads, and the index — drop it in Google Drive or
+wherever. **Import data** merges such a zip into the current data,
+OS-copy-style:
+
+- items whose name doesn't exist locally are added;
+- items with the same name *and* same `updatedAt` are the same item — skipped;
+- same name but a different `updatedAt` is a conflict — you pick per item:
+  keep existing, use imported, or keep both.
+
+Letter→resume links are rewired to the right local resumes (including
+keep-both copies), the index is rebuilt, and a full pre-import snapshot is
+saved to `data/backups/pre-import-<timestamp>.zip` before anything is
+written. Archives are validated strictly (path allow-list, zod schemas) — a
+bad zip is rejected with a 400 and changes nothing.
+
 ## Personal letters
 
 Cover letters live beside resumes and **inherit their entire visual identity

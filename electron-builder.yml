@@ -1,0 +1,29 @@
+# Unsigned local build — Gatekeeper is handled manually with `xattr -cr`
+# after installing (see README). CSC_IDENTITY_AUTO_DISCOVERY=false is set in
+# the `dist` script so no signing identity is picked up.
+appId: local.cvmanager.app
+productName: CV Manager
+asar: true
+directories:
+  output: dist
+files:
+  - electron/**
+  - package.json
+# The Next standalone server and the Puppeteer Chromium live outside the asar:
+# the server is forked as a child process and Chromium is a .app bundle.
+# The filters are a privacy guard: standalone tracing must never ship the
+# user's personal data inside the app.
+extraResources:
+  - from: build/app-server
+    to: app-server
+    filter:
+      - "**"
+      - "!data/**"
+      - "!exports/**"
+      - "!parity-out/**"
+      - "!.git/**"
+  - from: build/chrome
+    to: chrome
+mac:
+  target: dmg
+  category: public.app-category.productivity

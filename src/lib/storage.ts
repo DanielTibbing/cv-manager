@@ -11,13 +11,23 @@ import {
 } from "@/lib/schema";
 import { newLetter, seedResume } from "@/lib/defaults";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const RESUMES_DIR = path.join(DATA_DIR, "resumes");
-const LETTERS_DIR = path.join(DATA_DIR, "letters");
-const BACKUPS_DIR = path.join(DATA_DIR, "backups");
+// Paths default to the repo (dev/scripts); the Electron shell overrides them
+// via env so a packaged app writes to its user-data directory instead of cwd.
+// Keep the static `path.join(process.cwd(), "…")` shape in the fallback and
+// the ignore comment on the env branch — otherwise bundler file tracing
+// follows the dynamic expression and traces the whole project (including
+// data/ and exports/) into the standalone build.
+export const DATA_DIR = process.env.CV_DATA_DIR
+  ? path.resolve(/*turbopackIgnore: true*/ process.env.CV_DATA_DIR)
+  : path.join(process.cwd(), "data");
+export const RESUMES_DIR = path.join(DATA_DIR, "resumes");
+export const LETTERS_DIR = path.join(DATA_DIR, "letters");
+export const BACKUPS_DIR = path.join(DATA_DIR, "backups");
 export const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
-export const EXPORTS_DIR = path.join(process.cwd(), "exports");
-const INDEX_FILE = path.join(DATA_DIR, "index.json");
+export const EXPORTS_DIR = process.env.CV_EXPORTS_DIR
+  ? path.resolve(/*turbopackIgnore: true*/ process.env.CV_EXPORTS_DIR)
+  : path.join(process.cwd(), "exports");
+export const INDEX_FILE = path.join(DATA_DIR, "index.json");
 
 const MAX_BACKUPS_PER_RESUME = 20;
 
@@ -29,7 +39,7 @@ export class ConflictError extends Error {
   }
 }
 
-async function ensureDirs() {
+export async function ensureDirs() {
   await Promise.all(
     [RESUMES_DIR, LETTERS_DIR, BACKUPS_DIR, UPLOADS_DIR, EXPORTS_DIR].map(
       (dir) => fs.mkdir(dir, { recursive: true })
@@ -38,13 +48,13 @@ async function ensureDirs() {
 }
 
 // Atomic write: write to a temp file in the same directory, then rename.
-async function writeJsonAtomic(filePath: string, value: unknown) {
+export async function writeJsonAtomic(filePath: string, value: unknown) {
   const tmp = `${filePath}.${process.pid}.${Date.now()}.tmp`;
   await fs.writeFile(tmp, JSON.stringify(value, null, 2), "utf8");
   await fs.rename(tmp, filePath);
 }
 
-function safeId(id: string) {
+export function safeId(id: string) {
   // ids are nanoid-generated; reject anything path-like defensively
   if (!/^[A-Za-z0-9_-]+$/.test(id)) throw new Error(`Invalid id: ${id}`);
   return id;

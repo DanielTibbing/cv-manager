@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Electron main process is plain CommonJS Node, not app code:
+    "electron/**",
+    // Packaged app output (bundled Electron/Chromium/server files):
+    "dist/**",
   ]),
 ]);
 

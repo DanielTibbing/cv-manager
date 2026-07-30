@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { ResumeIndex } from "@/lib/schema";
 import { LetterList } from "@/components/manager/LetterList";
+import { ImportData } from "@/components/manager/ImportData";
 
 export default function ManagerPage() {
   const [index, setIndex] = useState<ResumeIndex | null>(null);
@@ -77,13 +78,23 @@ export default function ManagerPage() {
             <code>exports/</code>
           </p>
         </div>
-        <button
-          type="button"
-          onClick={createResume}
-          className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          New resume
-        </button>
+        <div className="flex items-center gap-2">
+          <a
+            href="/api/backup"
+            download
+            className="rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Export data
+          </a>
+          <ImportData onImported={refresh} />
+          <button
+            type="button"
+            onClick={createResume}
+            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            New resume
+          </button>
+        </div>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

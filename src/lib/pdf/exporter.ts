@@ -14,7 +14,12 @@ async function getBrowser(): Promise<Browser> {
     const browser = await g.__cvBrowser.catch(() => null);
     if (browser?.connected) return browser;
   }
-  g.__cvBrowser = puppeteer.launch({ headless: true });
+  // Packaged Electron app points at the Chromium bundled in its resources;
+  // dev resolves the puppeteer cache as usual.
+  g.__cvBrowser = puppeteer.launch({
+    headless: true,
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+  });
   return g.__cvBrowser;
 }
 
