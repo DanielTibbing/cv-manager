@@ -1,7 +1,7 @@
 // Post-`next build` step for the Electron bundle. The standalone server does
 // not copy public/ or .next/static itself (Next expects a CDN), and the
 // Puppeteer Chromium must be staged so electron-builder can ship it in the
-// app's resources. macOS-only for now.
+// app's resources. Cross-platform: mac (arm64/x64), Windows, Linux.
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -33,16 +33,50 @@ await fs.rename(
 );
 
 // 3. Stage the Puppeteer-downloaded Chrome for Testing into build/chrome/.
-//    electron/main.cjs points PUPPETEER_EXECUTABLE_PATH at the bundled copy.
-//    The cache layout is arch-specific (mac_arm-*/chrome-mac-arm64 on Apple
-//    Silicon, mac-*/chrome-mac-x64 on Intel).
-const isArm = process.arch === "arm64";
+//    The cache layout and the executable's relative path inside it vary per
+//    OS/arch; the whole browser directory is staged, and the resolved
+//    relative executable path is written to build/chrome/executable.json so
+//    electron/main.cjs doesn't need its own copy of this mapping.
+const PLATFORMS = {
+  "darwin-arm64": {
+    cachePrefix: "mac_arm-",
+    browserDir: "chrome-mac-arm64",
+    executable:
+      "Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
+  },
+  "darwin-x64": {
+    cachePrefix: "mac-",
+    browserDir: "chrome-mac-x64",
+    executable:
+      "Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
+  },
+  "win32-x64": {
+    cachePrefix: "win64-",
+    browserDir: "chrome-win64",
+    executable: "chrome.exe",
+  },
+  "linux-x64": {
+    cachePrefix: "linux-",
+    browserDir: "chrome-linux64",
+    executable: "chrome",
+  },
+};
+
+const platform = PLATFORMS[`${process.platform}-${process.arch}`];
+if (!platform) {
+  console.error(`Unsupported platform: ${process.platform}-${process.arch}`);
+  process.exit(1);
+}
+
 const cacheRoot = path.join(os.homedir(), ".cache", "puppeteer", "chrome");
 let candidates = [];
 try {
   candidates = (await fs.readdir(cacheRoot))
-    .filter((d) =>
-      isArm ? d.startsWith("mac_arm-") : d.startsWith("mac-") && !d.startsWith("mac_arm-")
+    .filter(
+      (d) =>
+        d.startsWith(platform.cachePrefix) &&
+        // "mac-" (Intel) is a prefix of "mac_arm-" — keep them disjoint.
+        !(platform.cachePrefix === "mac-" && d.startsWith("mac_arm-"))
     )
     .sort();
 } catch {
@@ -51,21 +85,23 @@ try {
 const chrome = candidates.at(-1);
 if (!chrome) {
   console.error(
-    `No Puppeteer Chrome (${process.arch}) found in ~/.cache/puppeteer/chrome.\n` +
+    `No Puppeteer Chrome (${process.platform}-${process.arch}) found in ` +
+      "~/.cache/puppeteer/chrome.\n" +
       "Run: npx puppeteer browsers install chrome"
   );
   process.exit(1);
 }
-const appBundle = path.join(
-  cacheRoot,
-  chrome,
-  isArm ? "chrome-mac-arm64" : "chrome-mac-x64",
-  "Google Chrome for Testing.app"
-);
 const chromeDest = path.join(root, "build", "chrome");
 // Start clean: re-copying over a previous stage trips on the .app's internal
-// framework symlinks.
+// framework symlinks (mac).
 await fs.rm(chromeDest, { recursive: true, force: true });
-await copy(appBundle, path.join(chromeDest, "Google Chrome for Testing.app"));
+await copy(
+  path.join(cacheRoot, chrome, platform.browserDir),
+  path.join(chromeDest, platform.browserDir)
+);
+await fs.writeFile(
+  path.join(chromeDest, "executable.json"),
+  JSON.stringify({ executable: path.join(platform.browserDir, platform.executable) })
+);
 
 console.log(`Standalone server prepared; staged Chrome from ${chrome}`);

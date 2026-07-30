@@ -6,6 +6,7 @@
 // at the bundled Chromium. Dev (CV_ELECTRON_DEV=1): attach to `next dev`.
 const { app, BrowserWindow, Menu, dialog, shell } = require("electron");
 const { fork } = require("node:child_process");
+const fs = require("node:fs");
 const net = require("node:net");
 const path = require("node:path");
 
@@ -33,6 +34,14 @@ async function startServer() {
   const userData = app.getPath("userData");
   exportsDir = path.join(userData, "exports");
   const port = await freePort();
+  // prepare-standalone stages the browser dir per OS/arch and records the
+  // executable's relative path here (avoids duplicating the mapping).
+  const { executable } = JSON.parse(
+    fs.readFileSync(
+      path.join(process.resourcesPath, "chrome", "executable.json"),
+      "utf8"
+    )
+  );
   serverProcess = fork(
     path.join(process.resourcesPath, "app-server", "server.js"),
     [],
@@ -48,10 +57,7 @@ async function startServer() {
         PUPPETEER_EXECUTABLE_PATH: path.join(
           process.resourcesPath,
           "chrome",
-          "Google Chrome for Testing.app",
-          "Contents",
-          "MacOS",
-          "Google Chrome for Testing"
+          executable
         ),
         // electron-builder strips top-level node_modules from extraResources,
         // so the staged server resolves its dependencies via NODE_PATH.

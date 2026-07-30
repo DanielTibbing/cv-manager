@@ -29,3 +29,10 @@ mac:
   category: public.app-category.productivity
   # Source: scripts/generate-icon.mjs → electron/icon.png (1024×1024)
   icon: electron/icon.png
+win:
+  target: nsis # per-user installer, no admin needed
+  icon: electron/icon.png
+linux:
+  target: AppImage
+  category: Office
+  icon: electron/icon.png

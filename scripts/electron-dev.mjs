@@ -5,7 +5,8 @@ import electronPath from "electron";
 
 const DEV_URL = "http://localhost:3000";
 
-const dev = spawn("npm", ["run", "dev"], { stdio: "inherit" });
+// shell: true so `npm` resolves on Windows (npm.cmd) as well.
+const dev = spawn("npm", ["run", "dev"], { stdio: "inherit", shell: true });
 
 async function waitForDev() {
   for (;;) {

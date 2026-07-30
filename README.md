@@ -25,30 +25,32 @@ First run seeds a sample resume. Data layout:
 
 ## Desktop app (Electron)
 
-The app can be bundled as a double-clickable macOS app:
+The app can be bundled as a double-clickable desktop app (macOS, Windows,
+Linux):
 
 ```bash
 npm run dist          # next build → stage standalone server + Chromium → electron-builder
-# output: dist/CV Manager-<version>.dmg
+# output: dist/ (dmg on macOS, NSIS .exe on Windows, AppImage on Linux)
 ```
 
-The build is unsigned on purpose. After copying the app to `/Applications`
-(or anywhere), clear the quarantine flag once:
+Builds are unsigned on purpose. Per platform, after installing:
 
-```bash
-xattr -cr "/Applications/CV Manager.app"
-```
+- **macOS**: `xattr -cr "/Applications/CV Manager.app"` (once).
+- **Windows**: click "More info → Run anyway" on the SmartScreen prompt.
+- **Linux**: `chmod +x` the AppImage and run it.
 
-Every push to `main` also builds the dmg in GitHub Actions and attaches it to
-the rolling **Latest build** prerelease under Releases, so other machines can
-just download it instead of building locally.
+Every push to `main` also builds all four variants (mac arm64, mac x64,
+Windows, Linux) in GitHub Actions and attaches them to the rolling **Latest
+build** prerelease under Releases, so other machines can just download
+instead of building locally.
 
 The packaged app runs the same Next.js server on a loopback port inside an
-Electron window. Data lives in `~/Library/Application Support/cv-manager/`
-(`data/` and `exports/` there override the repo paths via `CV_DATA_DIR` /
-`CV_EXPORTS_DIR`), and PDF export uses a Chromium bundled in the app's
-resources. `npm run electron:dev` gives the dev loop: `next dev` plus an
-Electron window attached to it.
+Electron window. Data lives in the platform user-data dir (e.g.
+`~/Library/Application Support/cv-manager/` on macOS — `data/` and `exports/`
+there override the repo paths via `CV_DATA_DIR` / `CV_EXPORTS_DIR`), and PDF
+export uses a Chromium bundled in the app's resources.
+`npm run electron:dev` gives the dev loop: `next dev` plus an Electron window
+attached to it.
 
 ## Moving data between machines
 

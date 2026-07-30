@@ -8,6 +8,7 @@ import { useResumeStore } from "@/store/resumeStore";
 import { ResumeDocument } from "@/components/resume/ResumeDocument";
 import { SortableColumns, type DragHandleProps } from "./dnd/SortableColumns";
 import { useDocumentAutosave } from "./useDocumentAutosave";
+import { isMacOS } from "@/lib/platform";
 import { ProfileForm } from "./forms/ProfileForm";
 import { SectionForm } from "./forms/SectionForm";
 import { LayoutControls } from "./LayoutControls";
@@ -329,19 +330,21 @@ export function EditorShell({ initial }: { initial: Resume }) {
               <span className="font-medium">
                 Exported {exportResult.fileName}
               </span>
-              <button
-                type="button"
-                onClick={() =>
-                  fetch("/api/reveal", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ path: exportResult.filePath }),
-                  })
-                }
-                className="rounded border border-green-300 px-2 py-0.5 hover:bg-green-100"
-              >
-                Reveal in Finder
-              </button>
+              {isMacOS && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    fetch("/api/reveal", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ path: exportResult.filePath }),
+                    })
+                  }
+                  className="rounded border border-green-300 px-2 py-0.5 hover:bg-green-100"
+                >
+                  Reveal in Finder
+                </button>
+              )}
             </>
           ) : (
             <span>Export failed: {exportResult.error}</span>

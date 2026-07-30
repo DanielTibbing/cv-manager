@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "electron:dev": "node scripts/electron-dev.mjs",
-    "dist": "next build && node scripts/prepare-standalone.mjs && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder"
+    "dist": "next build && node scripts/prepare-standalone.mjs && node scripts/dist.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

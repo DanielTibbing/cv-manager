@@ -6,6 +6,7 @@ import { useStore } from "zustand";
 import type { Letter, LetterStatus, Resume, ResumeIndexEntry } from "@/lib/schema";
 import { useLetterStore } from "@/store/letterStore";
 import { useDocumentAutosave } from "@/components/editor/useDocumentAutosave";
+import { isMacOS } from "@/lib/platform";
 import { Select, TextArea, TextInput } from "@/components/editor/forms/fields";
 import { LetterDocument } from "./LetterDocument";
 import { findMissing } from "@/lib/letters/placeholders";
@@ -192,19 +193,21 @@ export function LetterEditorShell({
           {exportResult.ok ? (
             <>
               <span className="font-medium">Exported {exportResult.fileName}</span>
-              <button
-                type="button"
-                onClick={() =>
-                  fetch("/api/reveal", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ path: exportResult.filePath }),
-                  })
-                }
-                className="rounded border border-green-300 px-2 py-0.5 hover:bg-green-100"
-              >
-                Reveal in Finder
-              </button>
+              {isMacOS && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    fetch("/api/reveal", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ path: exportResult.filePath }),
+                    })
+                  }
+                  className="rounded border border-green-300 px-2 py-0.5 hover:bg-green-100"
+                >
+                  Reveal in Finder
+                </button>
+              )}
             </>
           ) : (
             <span>Export failed: {exportResult.error}</span>

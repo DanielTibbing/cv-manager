@@ -1,5 +1,6 @@
-# Builds the unsigned macOS Electron app on every push to main and publishes
-# the dmgs as a rolling "Latest build" prerelease (tag: latest).
+# Builds the unsigned desktop app (mac arm64/x64, Windows, Linux) on every
+# push to main and publishes the installers as a rolling "Latest build"
+# prerelease (tag: latest).
 name: Build desktop app
 
 on:
@@ -13,12 +14,16 @@ permissions:
 jobs:
   build:
     strategy:
+      # electron-builder targets the host OS/arch, so each leg builds its own.
       matrix:
-        # electron-builder targets the host arch, so each leg builds its own.
         include:
           - os: macos-latest # Apple Silicon
             arch: arm64
           - os: macos-13 # Intel
+            arch: x64
+          - os: windows-latest
+            arch: x64
+          - os: ubuntu-latest
             arch: x64
     runs-on: ${{ matrix.os }}
     steps:
@@ -35,7 +40,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/puppeteer
-          key: puppeteer-${{ matrix.arch }}-${{ hashFiles('package-lock.json') }}
+          key: puppeteer-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('package-lock.json') }}
 
       - run: npm ci
       - run: npx puppeteer browsers install chrome
@@ -44,8 +49,11 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: dmg-${{ matrix.arch }}
-          path: dist/*.dmg
+          name: pkg-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            dist/*.dmg
+            dist/*.exe
+            dist/*.AppImage
           retention-days: 7
 
   release:
@@ -54,7 +62,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: dmg-*
+          pattern: pkg-*
           merge-multiple: true
           path: dist
 
@@ -65,9 +73,14 @@ jobs:
           name: Latest build #${{ github.run_number }}
           prerelease: true
           overwrite_files: true
-          files: dist/*.dmg
+          files: |
+            dist/*.dmg
+            dist/*.exe
+            dist/*.AppImage
           body: |
             Unsigned local build of CV Manager (${{ github.sha }}).
-            Pick the dmg for your Mac (`arm64` = Apple Silicon, `x64` = Intel).
-            After installing, clear the quarantine flag once:
-            `xattr -cr "/Applications/CV Manager.app"`
+            - **macOS** — pick `arm64` (Apple Silicon) or `x64` (Intel), then run
+              `xattr -cr "/Applications/CV Manager.app"` once after installing.
+            - **Windows** — `.exe` installer; click "More info → Run anyway" on
+              the SmartScreen prompt.
+            - **Linux** — `.AppImage`; `chmod +x` and run.

@@ -113,12 +113,17 @@ electron/                  # Electron main process (main.cjs, plain CommonJS —
 data/                      # user data (gitignored): resumes/, letters/, backups/, uploads/, index.json
 exports/                   # generated PDFs (gitignored)
 scripts/                   # dev smoke/parity harnesses + electron-dev/prepare-standalone/
-                           # generate-icon (plain node .mjs)
-electron-builder.yml       # unsigned macOS packaging config (dmg → dist/, gitignored).
+                           # dist/generate-icon (plain node .mjs)
+electron-builder.yml       # unsigned packaging config (mac dmg, Windows nsis,
+                           # Linux AppImage → dist/, gitignored).
                            # Gotcha: electron-builder strips top-level node_modules from
                            # extraResources, so prepare-standalone stages the server as
                            # build/app-server with node_modules renamed to vendor/, and
-                           # electron/main.cjs sets NODE_PATH to it when forking.
+                           # electron/main.cjs sets NODE_PATH to it when forking. The
+                           # staged Chromium's executable path varies per OS/arch and is
+                           # recorded in build/chrome/executable.json (read by main.cjs).
+.github/workflows/release.yml  # CI: builds all 4 variants per push, publishes a rolling
+                           # "Latest build" prerelease with the installers.
 ```
 
 ## Architecture invariants — do not break these
