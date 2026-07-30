@@ -109,7 +109,7 @@ export function ImportData({ onImported }: { onImported: () => void }) {
         type="button"
         disabled={busy}
         onClick={() => inputRef.current?.click()}
-        className="rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        className="rounded border border-slate-300 px-4 py-2 text-sm font-medium whitespace-nowrap text-slate-700 hover:bg-slate-50 disabled:opacity-50"
       >
         {busy ? "Importing…" : "Import data"}
       </button>

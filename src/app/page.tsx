@@ -78,11 +78,11 @@ export default function ManagerPage() {
             <code>exports/</code>
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <a
             href="/api/backup"
             download
-            className="rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="rounded border border-slate-300 px-4 py-2 text-sm font-medium whitespace-nowrap text-slate-700 hover:bg-slate-50"
           >
             Export data
           </a>
@@ -90,7 +90,7 @@ export default function ManagerPage() {
           <button
             type="button"
             onClick={createResume}
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium whitespace-nowrap text-white hover:bg-blue-700"
           >
             New resume
           </button>

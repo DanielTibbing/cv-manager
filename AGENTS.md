@@ -109,9 +109,11 @@ src/
   store/                   # zustand editor stores (resumeStore, letterStore)
   styles/                  # resume.css (token cascade), print.css
 electron/                  # Electron main process (main.cjs, plain CommonJS — eslint-ignored)
+                           # + icon.png (app icon; regenerate via scripts/generate-icon.mjs)
 data/                      # user data (gitignored): resumes/, letters/, backups/, uploads/, index.json
 exports/                   # generated PDFs (gitignored)
-scripts/                   # dev smoke/parity harnesses + electron-dev/prepare-standalone (plain node .mjs)
+scripts/                   # dev smoke/parity harnesses + electron-dev/prepare-standalone/
+                           # generate-icon (plain node .mjs)
 electron-builder.yml       # unsigned macOS packaging config (dmg → dist/, gitignored).
                            # Gotcha: electron-builder strips top-level node_modules from
                            # extraResources, so prepare-standalone stages the server as

@@ -27,3 +27,5 @@ extraResources:
 mac:
   target: dmg
   category: public.app-category.productivity
+  # Source: scripts/generate-icon.mjs → electron/icon.png (1024×1024)
+  icon: electron/icon.png
