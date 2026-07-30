@@ -39,6 +39,10 @@ The build is unsigned on purpose. After copying the app to `/Applications`
 xattr -cr "/Applications/CV Manager.app"
 ```
 
+Every push to `main` also builds the dmg in GitHub Actions and attaches it to
+the rolling **Latest build** prerelease under Releases, so other machines can
+just download it instead of building locally.
+
 The packaged app runs the same Next.js server on a loopback port inside an
 Electron window. Data lives in `~/Library/Application Support/cv-manager/`
 (`data/` and `exports/` there override the repo paths via `CV_DATA_DIR` /

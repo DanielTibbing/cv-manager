@@ -1,0 +1,48 @@
+# Builds the unsigned macOS Electron app on every push to main and publishes
+# the dmg as a rolling "Latest build" prerelease (tag: latest).
+name: Build desktop app
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write # needed to create/update the release
+
+jobs:
+  build:
+    runs-on: macos-latest # Apple Silicon (arm64)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # prepare-standalone.mjs stages the Puppeteer Chrome for Testing from
+      # this cache into the app bundle.
+      - name: Cache Puppeteer Chrome
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/puppeteer
+          key: puppeteer-${{ hashFiles('package-lock.json') }}
+
+      - run: npm ci
+      - run: npx puppeteer browsers install chrome
+      # next build → stage standalone + Chrome → electron-builder (unsigned)
+      - run: npm run dist
+
+      - name: Publish rolling prerelease
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest build #${{ github.run_number }}
+          prerelease: true
+          overwrite_files: true
+          files: dist/*.dmg
+          body: |
+            Unsigned local build of CV Manager (${{ github.sha }}).
+            After installing, clear the quarantine flag once:
+            `xattr -cr "/Applications/CV Manager.app"`
