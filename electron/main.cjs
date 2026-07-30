@@ -14,6 +14,8 @@ const DEV_URL = "http://localhost:3000";
 
 let serverProcess = null;
 let exportsDir = null;
+// Set on will-quit: the server exit that follows is our own kill, not a crash.
+let quitting = false;
 
 function freePort() {
   return new Promise((resolve, reject) => {
@@ -60,7 +62,7 @@ async function startServer() {
   );
   serverProcess.on("exit", (code) => {
     serverProcess = null;
-    if (code && code !== 0) {
+    if (!quitting && code && code !== 0) {
       dialog.showErrorBox(
         "CV Manager",
         `The app server stopped unexpectedly (exit ${code}). Please relaunch.`
@@ -129,6 +131,9 @@ async function main() {
 }
 
 app.on("window-all-closed", () => app.quit());
-app.on("will-quit", () => serverProcess?.kill());
+app.on("will-quit", () => {
+  quitting = true;
+  serverProcess?.kill();
+});
 
 main();
