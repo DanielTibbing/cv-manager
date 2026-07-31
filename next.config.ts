@@ -7,6 +7,15 @@ const nextConfig: NextConfig = {
   // Traced minimal server for the Electron bundle (.next/standalone).
   // No effect on `next dev`.
   output: "standalone",
+  outputFileTracingExcludes: {
+    "*": [
+      "build/**/*",
+      "dist/**/*",
+      "data/**/*",
+      "exports/**/*",
+      "parity-out/**/*",
+    ],
+  },
 };
 
 export default nextConfig;
