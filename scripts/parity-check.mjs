@@ -6,7 +6,7 @@
 //   4. pixel-diffs the pairs (pixelmatch) and asserts page counts match.
 // Fails (exit 1) if any page differs by more than MAX_DIFF_PCT.
 //
-// Requires `npm run dev` on :3000. Usage:
+// Requires `pnpm dev` on :3000. Usage:
 //   node scripts/parity-check.mjs [--keep]   (--keep leaves fixtures + diff PNGs)
 
 import fs from "node:fs/promises";

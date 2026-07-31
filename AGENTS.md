@@ -51,17 +51,17 @@ Core domain concepts:
 ## Build and run commands
 
 ```bash
-npm install
-npm run dev      # dev server → http://localhost:3000 (first run seeds a sample resume)
-npm run build    # production build
-npm run start    # production server
-npm run lint     # eslint (eslint-config-next core-web-vitals + typescript)
-npm run electron:dev  # next dev + Electron window attached to it
-npm run dist     # build the unsigned macOS .app/.dmg into dist/ (see README → Desktop app)
+pnpm install
+pnpm dev         # dev server → http://localhost:3000 (first run seeds a sample resume)
+pnpm build       # production build
+pnpm start       # production server
+pnpm lint        # eslint (eslint-config-next core-web-vitals + typescript)
+pnpm electron:dev # next dev + Electron window attached to it
+pnpm dist        # build the unsigned macOS .app/.dmg into dist/ (see README → Desktop app)
 ```
 
 There is no unit-test runner configured. Verification is done via the smoke
-scripts below plus `npm run lint` and `npm run build` (type-checks).
+scripts below plus `pnpm lint` and `pnpm build` (type-checks).
 
 ## Testing instructions
 

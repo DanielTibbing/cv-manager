@@ -1,4 +1,4 @@
-// Dev smoke test: loads the editor against a running `npm run dev`,
+// Dev smoke test: loads the editor against a running `pnpm dev`,
 // checks for client errors, exercises autosave, and saves a screenshot.
 // Usage: node scripts/editor-smoke.mjs <resumeId> [screenshotPath]
 import puppeteer from "puppeteer";

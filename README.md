@@ -8,8 +8,8 @@ A4 output.
 ## Quick start
 
 ```bash
-npm install
-npm run dev        # → http://localhost:3000
+pnpm install
+pnpm dev          # → http://localhost:3000
 ```
 
 First run seeds a sample resume. Data layout:
@@ -29,7 +29,7 @@ The app can be bundled as a double-clickable desktop app (macOS, Windows,
 Linux):
 
 ```bash
-npm run dist          # next build → stage standalone server + Chromium → electron-builder
+pnpm run dist        # next build → stage standalone server + Chromium → electron-builder
 # output: dist/ (dmg on macOS, NSIS .exe on Windows, AppImage on Linux)
 ```
 
@@ -49,7 +49,7 @@ Electron window. Data lives in the platform user-data dir (e.g.
 `~/Library/Application Support/cv-manager/` on macOS — `data/` and `exports/`
 there override the repo paths via `CV_DATA_DIR` / `CV_EXPORTS_DIR`), and PDF
 export uses a Chromium bundled in the app's resources.
-`npm run electron:dev` gives the dev loop: `next dev` plus an Electron window
+`pnpm run electron:dev` gives the dev loop: `pnpm dev` plus an Electron window
 attached to it.
 
 ## Moving data between machines
@@ -136,7 +136,7 @@ guarantee by pixel-diffing exported PDF pages against preview screenshots
 
 All roadmap phases are complete.
 
-## Dev smoke tests (require `npm run dev` in another terminal)
+## Dev smoke tests (require `pnpm dev` in another terminal)
 
 ```bash
 node scripts/editor-smoke.mjs <resumeId>   # editor loads, no client errors, autosave fires

@@ -29,10 +29,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
+          cache: pnpm
 
       # prepare-standalone.mjs stages the Puppeteer Chrome for Testing from
       # this cache into the app bundle.
@@ -40,12 +44,12 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/puppeteer
-          key: puppeteer-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('package-lock.json') }}
+          key: puppeteer-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
       - run: npx puppeteer browsers install chrome
       # next build → stage standalone + Chrome → electron-builder (unsigned)
-      - run: npm run dist
+      - run: pnpm run dist
 
       - uses: actions/upload-artifact@v4
         with:
