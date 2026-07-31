@@ -71,8 +71,8 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
-          name: ${{ github.ref_type == 'tag' && github.ref_name || format('Latest build #{0}', github.run_number) }}
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
           prerelease: false
           overwrite_files: true
           files: |
