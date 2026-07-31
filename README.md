@@ -35,7 +35,7 @@ pnpm run dist        # next build → stage standalone server + Chromium → ele
 
 Builds are unsigned on purpose. Per platform, after installing:
 
-- **macOS**: `xattr -cr "/Applications/CV Manager.app"` (once).
+- **macOS**: `xattr -src "/Applications/CV Manager.app"` (once).
 - **Windows**: click "More info → Run anyway" on the SmartScreen prompt.
 - **Linux**: `chmod +x` the AppImage and run it.
 

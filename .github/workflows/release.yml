@@ -82,7 +82,7 @@ jobs:
           body: |
             Unsigned local build of CV Manager (${{ github.sha }}).
             - **macOS** — pick `arm64` (Apple Silicon) or `x64` (Intel), then run
-              `xattr -cr "/Applications/CV Manager.app"` once after installing.
+              `xattr -src "/Applications/CV Manager.app"` once after installing.
             - **Windows** — `.exe` installer; click "More info → Run anyway" on
               the SmartScreen prompt.
             - **Linux** — `.AppImage`; `chmod +x` and run.
