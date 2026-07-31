@@ -32,6 +32,26 @@ await fs.rename(
   path.join(staging, "vendor")
 );
 
+// Next.js NFT omits Turbopack app-route runtime files from standalone output;
+// copy next-server compiled runtimes to vendor/next/dist/compiled/next-server.
+const nextServerSrc = path.join(
+  root,
+  "node_modules",
+  "next",
+  "dist",
+  "compiled",
+  "next-server"
+);
+const nextServerDest = path.join(
+  staging,
+  "vendor",
+  "next",
+  "dist",
+  "compiled",
+  "next-server"
+);
+await copy(nextServerSrc, nextServerDest);
+
 // 3. Stage the Puppeteer-downloaded Chrome for Testing into build/chrome/.
 //    The cache layout and the executable's relative path inside it vary per
 //    OS/arch; the whole browser directory is staged, and the resolved
