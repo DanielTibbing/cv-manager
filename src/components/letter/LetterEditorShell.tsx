@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useStore } from "zustand";
+import { ArrowLeft, FileDown, Redo2, Undo2, X } from "lucide-react";
 import type { Letter, LetterStatus, Resume, ResumeIndexEntry } from "@/lib/schema";
 import { useLetterStore } from "@/store/letterStore";
 import { useDocumentAutosave } from "@/components/editor/useDocumentAutosave";
@@ -35,6 +36,23 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
       </span>
       <div className="flex flex-col gap-2">{children}</div>
     </div>
+  );
+}
+
+// Autosave state as a colored dot + label, legible at a glance.
+function SaveStatus({ state }: { state: string }) {
+  if (state === "idle") return null;
+  const dot =
+    state === "saving"
+      ? "bg-amber-400 animate-pulse"
+      : state === "saved"
+        ? "bg-green-500"
+        : "bg-red-500";
+  return (
+    <span className="flex items-center gap-1.5 text-xs text-slate-400">
+      <span className={`h-1.5 w-1.5 rounded-full ${dot}`} aria-hidden />
+      {SAVE_LABEL[state]}
+    </span>
   );
 }
 
@@ -124,15 +142,19 @@ export function LetterEditorShell({
   return (
     <div className="flex h-screen flex-col">
       <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2">
-        <Link href="/" className="text-sm text-slate-500 hover:text-slate-800">
-          ← Letters
+        <Link
+          href="/"
+          className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Letters
         </Link>
         <input
           className="w-72 rounded border border-transparent px-2 py-1 text-sm font-semibold hover:border-slate-200 focus:border-slate-300 focus:outline-none"
           value={letter.name}
           onChange={(e) => update((d) => void (d.name = e.target.value))}
         />
-        <span className="text-xs text-slate-400">{SAVE_LABEL[saveState]}</span>
+        <SaveStatus state={saveState} />
         {missing.length > 0 && (
           <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
             {missing.length} unfilled placeholder{missing.length > 1 ? "s" : ""} — export
@@ -142,19 +164,23 @@ export function LetterEditorShell({
         <div className="flex-1" />
         <button
           type="button"
-          className="rounded px-2 py-1 text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-40"
+          title="Undo"
+          aria-label="Undo"
+          className="rounded p-1.5 text-slate-600 hover:bg-slate-100 disabled:opacity-40"
           disabled={pastStates.length === 0}
           onClick={() => undo()}
         >
-          ↩ Undo
+          <Undo2 className="h-4 w-4" />
         </button>
         <button
           type="button"
-          className="rounded px-2 py-1 text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-40"
+          title="Redo"
+          aria-label="Redo"
+          className="rounded p-1.5 text-slate-600 hover:bg-slate-100 disabled:opacity-40"
           disabled={futureStates.length === 0}
           onClick={() => redo()}
         >
-          ↪ Redo
+          <Redo2 className="h-4 w-4" />
         </button>
         <button
           type="button"
@@ -176,8 +202,9 @@ export function LetterEditorShell({
           type="button"
           onClick={handleExport}
           disabled={exporting || missing.length > 0}
-          className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          className="flex items-center gap-1.5 rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
         >
+          <FileDown className="h-4 w-4" />
           {exporting ? "Exporting…" : "Export PDF"}
         </button>
       </header>
@@ -216,10 +243,11 @@ export function LetterEditorShell({
           <button
             type="button"
             title="Dismiss"
+            aria-label="Dismiss"
             onClick={() => setExportResult(null)}
-            className="rounded px-1.5 hover:bg-black/5"
+            className="rounded p-0.5 hover:bg-black/5"
           >
-            ✕
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
       )}

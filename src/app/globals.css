@@ -5,3 +5,37 @@ body {
   color: #111827;
   font-family: var(--font-inter), sans-serif;
 }
+
+/* Tailwind v4's preflight no longer gives interactive elements a pointer
+   cursor — restore it so clickability reads at a glance. */
+button,
+select,
+summary,
+[role="button"] {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+}
+
+/* Instant hover swaps feel broken; ease every interactive color change. */
+a,
+button,
+select,
+summary {
+  transition:
+    color 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease,
+    opacity 150ms ease;
+}
+
+/* Keyboard focus must stay visible even where components don't style it.
+   (Text inputs/areas already get a blue border via their own classes.) */
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible,
+select:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}

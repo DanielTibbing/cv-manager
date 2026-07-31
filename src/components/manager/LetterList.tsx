@@ -3,11 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Plus } from "lucide-react";
 import type {
   LetterIndexEntry,
   LetterStatus,
   ResumeIndexEntry,
 } from "@/lib/schema";
+import { formatRelativeTime } from "@/lib/relative-time";
+import { InlineRename } from "@/components/manager/InlineRename";
+import { RowMenu } from "@/components/manager/RowMenu";
 
 const STATUS_STYLE: Record<LetterStatus, string> = {
   draft: "bg-slate-100 text-slate-600",
@@ -177,6 +181,7 @@ export function LetterList({
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"" | LetterStatus>("");
   const [showModal, setShowModal] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     const res = await fetch("/api/letters");
@@ -205,10 +210,10 @@ export function LetterList({
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   }, [letters, query, statusFilter]);
 
-  const rename = async (id: string, currentName: string) => {
-    const name = window.prompt("New name:", currentName);
-    if (!name || name === currentName) return;
+  const rename = async (id: string, name: string) => {
+    setRenamingId(null);
     const letter = await (await fetch(`/api/letters/${id}`)).json();
+    if (name === letter.name) return;
     await fetch(`/api/letters/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -246,8 +251,9 @@ export function LetterList({
         <button
           type="button"
           onClick={() => setShowModal(true)}
-          className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="flex items-center gap-1.5 rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
+          <Plus className="h-4 w-4" />
           New letter
         </button>
       </div>
@@ -277,9 +283,19 @@ export function LetterList({
 
       {letters && letters.length === 0 && (
         <div className="rounded-lg border border-dashed border-slate-300 px-6 py-8 text-center text-sm text-slate-400">
-          No letters yet — create one, write your generic pitch with{" "}
-          <code>{"{{company}}"}</code> placeholders, and mark it as a base to
-          reuse for every application.
+          <p>
+            No letters yet — write your generic pitch with{" "}
+            <code>{"{{company}}"}</code> placeholders and mark it as a base to
+            reuse for every application.
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowModal(true)}
+            className="mt-3 inline-flex items-center gap-1.5 rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4" />
+            New letter
+          </button>
         </div>
       )}
 
@@ -290,23 +306,35 @@ export function LetterList({
             className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2.5 shadow-sm"
           >
             <div className="min-w-0 flex-1">
-              <Link
-                href={`/editor/letter/${letter.id}`}
-                className="font-medium text-slate-800 hover:text-blue-700"
-              >
-                {letter.name}
-              </Link>
-              {letter.isBase && (
-                <span className="ml-2 rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700">
-                  Base
-                </span>
+              {renamingId === letter.id ? (
+                <InlineRename
+                  initial={letter.name}
+                  onCommit={(name) => rename(letter.id, name)}
+                  onCancel={() => setRenamingId(null)}
+                />
+              ) : (
+                <>
+                  <Link
+                    href={`/editor/letter/${letter.id}`}
+                    className="font-medium text-slate-800 hover:text-blue-700"
+                  >
+                    {letter.name}
+                  </Link>
+                  {letter.isBase && (
+                    <span className="ml-2 rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700">
+                      Base
+                    </span>
+                  )}
+                </>
               )}
               <div className="text-xs text-slate-400">
                 {[letter.company, letter.role].filter(Boolean).join(" · ") || "—"}
                 {" · "}
                 {resumeName(letter.resumeId) ?? "unlinked"}
                 {" · "}
-                {new Date(letter.updatedAt).toLocaleDateString()}
+                <span title={new Date(letter.updatedAt).toLocaleString()}>
+                  {formatRelativeTime(letter.updatedAt)}
+                </span>
               </div>
             </div>
             <span
@@ -316,31 +344,25 @@ export function LetterList({
             </span>
             <Link
               href={`/editor/letter/${letter.id}`}
-              className="rounded px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
+              className="rounded border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
             >
               Edit
             </Link>
-            <button
-              type="button"
-              onClick={() => rename(letter.id, letter.name)}
-              className="rounded px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
-            >
-              Rename
-            </button>
-            <button
-              type="button"
-              onClick={() => toggleBase(letter.id)}
-              className="rounded px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
-            >
-              {letter.isBase ? "Unmark base" : "Mark base"}
-            </button>
-            <button
-              type="button"
-              onClick={() => remove(letter.id, letter.name)}
-              className="rounded px-2 py-1 text-xs text-red-500 hover:bg-red-50"
-            >
-              Delete
-            </button>
+            <RowMenu
+              label={`Actions for ${letter.name}`}
+              items={[
+                { label: "Rename", onClick: () => setRenamingId(letter.id) },
+                {
+                  label: letter.isBase ? "Unmark base" : "Mark base",
+                  onClick: () => toggleBase(letter.id),
+                },
+                {
+                  label: "Delete",
+                  danger: true,
+                  onClick: () => remove(letter.id, letter.name),
+                },
+              ]}
+            />
           </li>
         ))}
       </ul>

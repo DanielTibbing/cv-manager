@@ -1,6 +1,7 @@
 "use client";
 
 import type { Contact } from "@/lib/schema";
+import { Trash2 } from "lucide-react";
 import { newContact } from "@/lib/defaults";
 import { useResumeStore } from "@/store/resumeStore";
 import { PhotoUploader } from "../PhotoUploader";
@@ -86,7 +87,7 @@ export function ProfileForm() {
                 title="Remove contact"
                 onClick={() => update((d) => void d.profile.contacts.splice(i, 1))}
               >
-                ✕
+                <Trash2 className="h-3.5 w-3.5" />
               </SmallButton>
             </div>
           ))}

@@ -3,6 +3,18 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useStore } from "zustand";
+import {
+  ArrowLeft,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  FileDown,
+  GripVertical,
+  Redo2,
+  Trash2,
+  Undo2,
+  X,
+} from "lucide-react";
 import type { Resume, SectionKind } from "@/lib/schema";
 import { useResumeStore } from "@/store/resumeStore";
 import { ResumeDocument } from "@/components/resume/ResumeDocument";
@@ -42,11 +54,26 @@ function useAutosave() {
 
 function Chevron({ open }: { open: boolean }) {
   return (
-    <span
-      className={`text-xs text-slate-400 transition-transform ${open ? "rotate-90" : ""}`}
+    <ChevronRight
+      className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${open ? "rotate-90" : ""}`}
       aria-hidden
-    >
-      ▶
+    />
+  );
+}
+
+// Autosave state as a colored dot + label, legible at a glance.
+function SaveStatus({ state }: { state: string }) {
+  if (state === "idle") return null;
+  const dot =
+    state === "saving"
+      ? "bg-amber-400 animate-pulse"
+      : state === "saved"
+        ? "bg-green-500"
+        : "bg-red-500";
+  return (
+    <span className="flex items-center gap-1.5 text-xs text-slate-400">
+      <span className={`h-1.5 w-1.5 rounded-full ${dot}`} aria-hidden />
+      {SAVE_LABEL[state]}
     </span>
   );
 }
@@ -109,11 +136,12 @@ function SectionCard({
     >
       <div className="flex items-center gap-2 px-3 py-2">
         <span
-          className="text-slate-300"
+          className="cursor-grab text-slate-300 hover:text-slate-500 active:cursor-grabbing"
           title="Drag to reorder"
+          aria-label={`Drag to reorder ${section.title}`}
           {...handleProps}
         >
-          ⠿
+          <GripVertical className="h-4 w-4" />
         </span>
         <button
           type="button"
@@ -133,22 +161,28 @@ function SectionCard({
         <button
           type="button"
           title={section.visible ? "Hide section" : "Show section"}
-          className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-100"
+          aria-label={section.visible ? "Hide section" : "Show section"}
+          className="rounded p-1 text-slate-500 hover:bg-slate-100"
           onClick={() => toggleVisible(sectionId)}
         >
-          {section.visible ? "👁" : "🚫"}
+          {section.visible ? (
+            <Eye className="h-4 w-4" />
+          ) : (
+            <EyeOff className="h-4 w-4" />
+          )}
         </button>
         <button
           type="button"
           title="Delete section"
-          className="rounded px-1.5 py-0.5 text-sm text-red-400 hover:bg-red-50"
+          aria-label="Delete section"
+          className="rounded p-1 text-red-400 hover:bg-red-50"
           onClick={() => {
             if (window.confirm(`Delete section "${section.title}" and its content?`)) {
               removeSection(sectionId);
             }
           }}
         >
-          ✕
+          <Trash2 className="h-4 w-4" />
         </button>
       </div>
       {expanded && <SectionForm section={section} />}
@@ -274,31 +308,39 @@ export function EditorShell({ initial }: { initial: Resume }) {
   return (
     <div className="flex h-screen flex-col">
       <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2">
-        <Link href="/" className="text-sm text-slate-500 hover:text-slate-800">
-          ← Resumes
+        <Link
+          href="/"
+          className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Resumes
         </Link>
         <input
           className="w-64 rounded border border-transparent px-2 py-1 text-sm font-semibold hover:border-slate-200 focus:border-slate-300 focus:outline-none"
           value={resume.name}
           onChange={(e) => update((d) => void (d.name = e.target.value))}
         />
-        <span className="text-xs text-slate-400">{SAVE_LABEL[saveState]}</span>
+        <SaveStatus state={saveState} />
         <div className="flex-1" />
         <button
           type="button"
-          className="rounded px-2 py-1 text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-40"
+          title="Undo"
+          aria-label="Undo"
+          className="rounded p-1.5 text-slate-600 hover:bg-slate-100 disabled:opacity-40"
           disabled={pastStates.length === 0}
           onClick={() => undo()}
         >
-          ↩ Undo
+          <Undo2 className="h-4 w-4" />
         </button>
         <button
           type="button"
-          className="rounded px-2 py-1 text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-40"
+          title="Redo"
+          aria-label="Redo"
+          className="rounded p-1.5 text-slate-600 hover:bg-slate-100 disabled:opacity-40"
           disabled={futureStates.length === 0}
           onClick={() => redo()}
         >
-          ↪ Redo
+          <Redo2 className="h-4 w-4" />
         </button>
         <a
           href={`/print/${resume.id}`}
@@ -311,8 +353,9 @@ export function EditorShell({ initial }: { initial: Resume }) {
           type="button"
           onClick={handleExport}
           disabled={exporting}
-          className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          className="flex items-center gap-1.5 rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
         >
+          <FileDown className="h-4 w-4" />
           {exporting ? "Exporting…" : "Export PDF"}
         </button>
       </header>
@@ -353,10 +396,11 @@ export function EditorShell({ initial }: { initial: Resume }) {
           <button
             type="button"
             title="Dismiss"
+            aria-label="Dismiss"
             onClick={() => setExportResult(null)}
-            className="rounded px-1.5 hover:bg-black/5"
+            className="rounded p-0.5 hover:bg-black/5"
           >
-            ✕
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
       )}
@@ -376,7 +420,7 @@ export function EditorShell({ initial }: { initial: Resume }) {
             />
           </div>
           <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Sections — drag ⠿ to reorder
+            Sections
           </h2>
           {resume.sections.length === 0 && (
             <p className="mb-2 rounded border border-dashed border-slate-300 px-3 py-2 text-xs text-slate-400">

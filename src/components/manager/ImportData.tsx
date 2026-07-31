@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Upload, X } from "lucide-react";
 import type {
   ImportConflict,
   ImportPlan,
@@ -35,6 +36,9 @@ export function ImportData({ onImported }: { onImported: () => void }) {
   const [conflicts, setConflicts] = useState<ImportConflict[] | null>(null);
   const [resolutions, setResolutions] = useState<Record<string, Resolution>>({});
   const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(
+    null
+  );
 
   const post = async (
     mode: "analyze" | "apply",
@@ -56,10 +60,11 @@ export function ImportData({ onImported }: { onImported: () => void }) {
 
   const onFilePicked = async (picked: File) => {
     setBusy(true);
+    setNotice(null);
     try {
       const plan: ImportPlan = await post("analyze", picked);
       if (plan.conflicts.length === 0) {
-        window.alert(summarize(await post("apply", picked)));
+        setNotice({ ok: true, text: summarize(await post("apply", picked)) });
         onImported();
       } else {
         setFile(picked);
@@ -71,7 +76,10 @@ export function ImportData({ onImported }: { onImported: () => void }) {
         );
       }
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : "Import failed");
+      setNotice({
+        ok: false,
+        text: err instanceof Error ? err.message : "Import failed",
+      });
     } finally {
       setBusy(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -82,12 +90,15 @@ export function ImportData({ onImported }: { onImported: () => void }) {
     if (!file) return;
     setBusy(true);
     try {
-      window.alert(summarize(await post("apply", file, resolutions)));
+      setNotice({ ok: true, text: summarize(await post("apply", file, resolutions)) });
       setConflicts(null);
       setFile(null);
       onImported();
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : "Import failed");
+      setNotice({
+        ok: false,
+        text: err instanceof Error ? err.message : "Import failed",
+      });
     } finally {
       setBusy(false);
     }
@@ -109,10 +120,30 @@ export function ImportData({ onImported }: { onImported: () => void }) {
         type="button"
         disabled={busy}
         onClick={() => inputRef.current?.click()}
-        className="rounded border border-slate-300 px-4 py-2 text-sm font-medium whitespace-nowrap text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        className="flex items-center gap-1.5 rounded border border-slate-300 px-4 py-2 text-sm font-medium whitespace-nowrap text-slate-700 hover:bg-slate-50 disabled:opacity-50"
       >
+        <Upload className="h-4 w-4" />
         {busy ? "Importing…" : "Import data"}
       </button>
+
+      {notice && (
+        <div
+          role="status"
+          className={`fixed bottom-4 right-4 z-50 flex max-w-md items-start gap-3 rounded-md px-4 py-2.5 text-sm shadow-lg ${
+            notice.ok ? "bg-slate-800 text-white" : "bg-red-600 text-white"
+          }`}
+        >
+          <span>{notice.text}</span>
+          <button
+            type="button"
+            aria-label="Dismiss"
+            onClick={() => setNotice(null)}
+            className="rounded p-0.5 hover:bg-white/20"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {conflicts && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-6">

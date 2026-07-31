@@ -38,6 +38,10 @@ Core domain concepts:
 - **zustand 5** (+ immer middleware, **zundo** for undo/redo) for editor
   client state.
 - **@dnd-kit** for drag-and-drop section reordering.
+- **lucide-react** for all UI icons — never emoji or text glyphs (▶ ⠿ ✕ …)
+  in UI chrome. Global base rules in `src/app/globals.css` restore
+  `cursor: pointer`, 150ms color transitions, and visible `:focus-visible`
+  outlines for interactive elements (Tailwind v4's preflight dropped these).
 - **zod 4** for document schemas and request validation.
 - **puppeteer** for PDF export; **nanoid** for ids; **server-only** to fence
   server modules.

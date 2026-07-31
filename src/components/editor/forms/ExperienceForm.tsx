@@ -1,6 +1,7 @@
 "use client";
 
 import type { ExperienceItem, Section } from "@/lib/schema";
+import { Eye, EyeOff, Trash2 } from "lucide-react";
 import { newExperienceItem, newSubPosition } from "@/lib/defaults";
 import { AddButton, SmallButton, TextArea, TextInput } from "./fields";
 import { ItemShell } from "./ItemShell";
@@ -54,7 +55,11 @@ function SubPositionsEditor({
                   )
                 }
               >
-                {sp.visible ? "👁" : "🚫"}
+                {sp.visible ? (
+                  <Eye className="h-3.5 w-3.5" />
+                ) : (
+                  <EyeOff className="h-3.5 w-3.5" />
+                )}
               </SmallButton>
               <SmallButton
                 danger
@@ -63,7 +68,7 @@ function SubPositionsEditor({
                   mutateItem((it) => void it.subPositions!.splice(j, 1))
                 }
               >
-                ✕
+                <Trash2 className="h-3.5 w-3.5" />
               </SmallButton>
             </div>
             <div className="grid grid-cols-2 gap-1.5">
