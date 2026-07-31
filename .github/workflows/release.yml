@@ -1,11 +1,11 @@
-# Builds the unsigned desktop app (mac arm64/x64, Windows, Linux) on every
-# push to main and publishes the installers as a rolling "Latest build"
-# prerelease (tag: latest).
+# Builds the unsigned desktop app (mac arm64/x64, Windows, Linux) on version
+# tag pushes (e.g. v0.1.0) or manual trigger from the GitHub Actions tab.
 name: Build desktop app
 
 on:
   push:
-    branches: [main]
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 permissions:
@@ -68,12 +68,12 @@ jobs:
           merge-multiple: true
           path: dist
 
-      - name: Publish rolling prerelease
+      - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: latest
-          name: Latest build #${{ github.run_number }}
-          prerelease: true
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
+          name: ${{ github.ref_type == 'tag' && github.ref_name || format('Latest build #{0}', github.run_number) }}
+          prerelease: false
           overwrite_files: true
           files: |
             dist/*.dmg

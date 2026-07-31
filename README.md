@@ -39,10 +39,10 @@ Builds are unsigned on purpose. Per platform, after installing:
 - **Windows**: click "More info → Run anyway" on the SmartScreen prompt.
 - **Linux**: `chmod +x` the AppImage and run it.
 
-Every push to `main` also builds all four variants (mac arm64, mac x64,
-Windows, Linux) in GitHub Actions and attaches them to the rolling **Latest
-build** prerelease under Releases, so other machines can just download
-instead of building locally.
+Pushing a version tag (e.g. `git tag v0.1.0 && git push origin v0.1.0`) builds
+all four variants (mac arm64, mac x64, Windows, Linux) in GitHub Actions and
+attaches installer artifacts under Releases. Builds can also be triggered
+manually from the Actions tab.
 
 The packaged app runs the same Next.js server on a loopback port inside an
 Electron window. Data lives in the platform user-data dir (e.g.
