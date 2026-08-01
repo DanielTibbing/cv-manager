@@ -500,6 +500,12 @@ When helping the user write or improve resume content, follow these principles:
 - Don't fabricate experience — reframe existing achievements to highlight
   relevant aspects
 
+### Punctuation
+- **Never use em-dashes (—).** Use a comma, semicolon, colon, or rewrite the
+  sentence instead. This applies to all generated text: bullets, summaries,
+  headlines, letter bodies, section titles, and any other content written into
+  resume or letter JSON files.
+
 ---
 
 ## 9 — Template information
