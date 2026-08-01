@@ -19,6 +19,7 @@ async function getBrowser(): Promise<Browser> {
   g.__cvBrowser = puppeteer.launch({
     headless: true,
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
   });
   return g.__cvBrowser;
 }

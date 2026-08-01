@@ -123,5 +123,15 @@ await fs.writeFile(
   path.join(chromeDest, "executable.json"),
   JSON.stringify({ executable: path.join(platform.browserDir, platform.executable) })
 );
+const execPath = path.join(
+  chromeDest,
+  platform.browserDir,
+  platform.executable
+);
+try {
+  await fs.chmod(execPath, 0o755);
+} catch {
+  // ignore if not supported
+}
 
 console.log(`Standalone server prepared; staged Chrome from ${chrome}`);

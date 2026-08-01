@@ -291,12 +291,13 @@ export function EditorShell({ initial }: { initial: Resume }) {
         const body = await res.json();
         setExportResult({ ok: true, fileName: body.fileName, filePath: body.filePath });
       } else {
+        const text = await res.text();
         let error: string;
         try {
-          const body = await res.json();
+          const body = JSON.parse(text);
           error = body.error || `Export failed (${res.status})`;
         } catch {
-          error = (await res.text()) || `Export failed (${res.status})`;
+          error = text || `Export failed (${res.status})`;
         }
         setExportResult({ ok: false, error });
       }

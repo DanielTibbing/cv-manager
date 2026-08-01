@@ -129,12 +129,13 @@ export function LetterEditorShell({
       } else {
         // Production Next.js may return plain-text errors; try JSON first,
         // fall back to the raw text so the real error surfaces in the UI.
+        const text = await res.text();
         let error: string;
         try {
-          const body = await res.json();
+          const body = JSON.parse(text);
           error = body.error || `Export failed (${res.status})`;
         } catch {
-          error = (await res.text()) || `Export failed (${res.status})`;
+          error = text || `Export failed (${res.status})`;
         }
         setExportResult({ ok: false, error });
       }
