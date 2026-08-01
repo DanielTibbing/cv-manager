@@ -15,6 +15,7 @@ const DEV_URL = "http://localhost:3000";
 
 let serverProcess = null;
 let exportsDir = null;
+let logFile = null;
 // Set on will-quit: the server exit that follows is our own kill, not a crash.
 let quitting = false;
 
@@ -33,6 +34,9 @@ function freePort() {
 async function startServer() {
   const userData = app.getPath("userData");
   exportsDir = path.join(userData, "exports");
+  logFile = path.join(userData, "server.log");
+  const logStream = fs.createWriteStream(logFile, { flags: "a" });
+
   const port = await freePort();
   // prepare-standalone stages the browser dir per OS/arch and records the
   // executable's relative path here (avoids duplicating the mapping).
@@ -63,9 +67,12 @@ async function startServer() {
         // so the staged server resolves its dependencies via NODE_PATH.
         NODE_PATH: path.join(process.resourcesPath, "app-server", "vendor"),
       },
-      stdio: ["ignore", "inherit", "inherit", "ipc"],
+      stdio: ["ignore", "pipe", "pipe", "ipc"],
     }
   );
+
+  serverProcess.stdout?.pipe(logStream);
+  serverProcess.stderr?.pipe(logStream);
   serverProcess.on("exit", (code) => {
     serverProcess = null;
     if (!quitting && code && code !== 0) {
@@ -105,6 +112,11 @@ function buildMenu() {
           label: "Reveal Exports Folder",
           enabled: !DEV,
           click: () => exportsDir && shell.openPath(exportsDir),
+        },
+        {
+          label: "Reveal Server Log",
+          enabled: !DEV,
+          click: () => logFile && shell.openPath(logFile),
         },
         { type: "separator" },
         { role: "quit" },

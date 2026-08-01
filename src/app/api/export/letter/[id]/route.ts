@@ -13,6 +13,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     const result = await exportLetterPdf(id, origin);
     return NextResponse.json(result, { status: 201 });
   } catch (err) {
+    console.error("PDF export letter failed:", err);
     if (err instanceof UnresolvedPlaceholdersError) {
       return NextResponse.json(
         { error: err.message, missing: err.keys },
