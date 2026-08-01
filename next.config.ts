@@ -7,6 +7,14 @@ const nextConfig: NextConfig = {
   // Traced minimal server for the Electron bundle (.next/standalone).
   // No effect on `next dev`.
   output: "standalone",
+  serverExternalPackages: ["puppeteer", "puppeteer-core", "@puppeteer/browsers"],
+  outputFileTracingIncludes: {
+    "/api/**/*": [
+      "./node_modules/puppeteer/**/*",
+      "./node_modules/puppeteer-core/**/*",
+      "./node_modules/@puppeteer/**/*",
+    ],
+  },
   outputFileTracingExcludes: {
     "*": [
       "build/**/*",

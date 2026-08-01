@@ -287,12 +287,19 @@ export function EditorShell({ initial }: { initial: Resume }) {
     setExportResult(null);
     try {
       const res = await fetch(`/api/export/${resume.id}`, { method: "POST" });
-      const body = await res.json();
-      setExportResult(
-        res.ok
-          ? { ok: true, fileName: body.fileName, filePath: body.filePath }
-          : { ok: false, error: body.error }
-      );
+      if (res.ok) {
+        const body = await res.json();
+        setExportResult({ ok: true, fileName: body.fileName, filePath: body.filePath });
+      } else {
+        let error: string;
+        try {
+          const body = await res.json();
+          error = body.error || `Export failed (${res.status})`;
+        } catch {
+          error = (await res.text()) || `Export failed (${res.status})`;
+        }
+        setExportResult({ ok: false, error });
+      }
     } catch (err) {
       setExportResult({
         ok: false,

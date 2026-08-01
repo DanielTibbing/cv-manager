@@ -1,6 +1,6 @@
 {
   "name": "cv-manager",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "packageManager": "pnpm@10.28.1",
   "main": "electron/main.cjs",
