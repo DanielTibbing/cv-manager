@@ -57,18 +57,16 @@ try {
     // Derive the real package name from the resolved path (last path segment)
     const realPkg = path.basename(realTarget);
 
-    // Write a stub: package.json with main/exports + an index.js that re-exports
+    // Write a CJS-only stub. ESM bare specifiers don't honour NODE_PATH, but
+    // CJS require() does. When Turbopack does import("puppeteer-<hash>"), Node
+    // sees no "import" export condition, falls back to the CJS "require" path,
+    // executes index.js, and require("puppeteer") resolves via NODE_PATH →
+    // vendor/puppeteer (which has puppeteer-core right next to it in vendor/).
     const stubDir = path.join(stagedNextModules, alias);
     await fs.mkdir(stubDir, { recursive: true });
-    // CJS stub
     await fs.writeFile(
       path.join(stubDir, "index.js"),
       `module.exports = require(${JSON.stringify(realPkg)});\n`
-    );
-    // ESM stub (for import())
-    await fs.writeFile(
-      path.join(stubDir, "index.mjs"),
-      `export * from ${JSON.stringify(realPkg)};\nexport { default } from ${JSON.stringify(realPkg)};\n`
     );
     await fs.writeFile(
       path.join(stubDir, "package.json"),
@@ -76,14 +74,9 @@ try {
         {
           name: alias,
           version: "0.0.1",
+          type: "commonjs",
           main: "index.js",
-          exports: {
-            ".": {
-              import: "./index.mjs",
-              require: "./index.js",
-              default: "./index.js",
-            },
-          },
+          exports: { ".": "./index.js" },
         },
         null,
         2
