@@ -3,6 +3,7 @@
 // Puppeteer Chromium must be staged so electron-builder can ship it in the
 // app's resources. Cross-platform: mac (arm64/x64), Windows, Linux.
 import fs from "node:fs/promises";
+import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
 
@@ -33,58 +34,106 @@ await fs.rename(
 );
 
 
-// Stage Turbopack's internal module aliases (.next/node_modules) as re-export stubs.
-// Turbopack aliases e.g. "puppeteer-<hash>" → puppeteer so the runtime can do
-// externalImport("puppeteer-<hash>"). Copying the real package doesn't work because
-// the copy would then try to require('puppeteer-core') relative to itself, which
-// isn't in that directory. Instead we write a tiny stub that just re-exports from
-// the real package in vendor/, where NODE_PATH resolves it correctly.
+// Stage Turbopack's external server packages (.next/node_modules) for the built app.
+//
+// Background: Turbopack compiles serverExternalPackages (puppeteer, puppeteer-core,
+// @puppeteer/browsers) as externalImport() calls that do await import("<pkg>-<hash>").
+// ESM import() resolution walks up the filesystem looking for a directory literally
+// named node_modules/ — it does NOT honour NODE_PATH. From the built app's
+// .next/server/chunks/ the walk finds .next/node_modules/ and stops there. So that
+// directory must contain, as REAL directories (no symlinks — electron-builder and
+// Windows packaging mangle them):
+//   1. the hashed alias itself (e.g. puppeteer-<hash> → the real puppeteer package)
+//   2. the FULL dependency closure of the externals (puppeteer-core imports
+//      chromium-bidi, devtools-protocol, … which Next's standalone tracing omits,
+//      so vendor/ alone is not enough)
+// With everything flat in one node_modules/, each package's own bare imports
+// resolve by walking up from wherever it was loaded.
 const nextNodeModules = path.join(root, ".next", "node_modules");
+const require = createRequire(path.join(root, "package.json"));
 try {
   const stagedNextModules = path.join(staging, ".next", "node_modules");
   await fs.rm(stagedNextModules, { recursive: true, force: true });
 
-  const entries = await fs.readdir(nextNodeModules);
-  for (const alias of entries) {
-    const src = path.join(nextNodeModules, alias);
-    // Resolve the symlink to find which real package this alias points to
+  // Copy a package (by resolved real path, dereferencing pnpm symlinks) into the
+  // staged node_modules under its package name.
+  const stagedPkgs = new Map(); // name -> real dir already staged
+  async function stagePackage(name, realDir) {
+    if (stagedPkgs.has(name)) return;
+    stagedPkgs.set(name, realDir);
+    await fs.cp(realDir, path.join(stagedNextModules, name), {
+      recursive: true,
+      dereference: true,
+    });
+  }
+
+  // Breadth-first walk of the dependency closure, resolving each dependency from
+  // its parent's real location (this is what makes pnpm's isolated layout work).
+  // Keep the seed list in sync with serverExternalPackages in next.config.ts.
+  const queue = ["puppeteer", "puppeteer-core", "@puppeteer/browsers"].map(
+    (name) => ({ name, fromDir: root })
+  );
+  while (queue.length > 0) {
+    const { name, fromDir } = queue.shift();
+    if (stagedPkgs.has(name)) continue;
+    // Resolve the package's own package.json. Some packages hide it behind an
+    // "exports" map (ERR_PACKAGE_PATH_NOT_EXPORTED), so fall back to resolving
+    // the entry point and walking up to the nearest package.json.
+    let pkgJsonPath;
+    try {
+      pkgJsonPath = require.resolve(`${name}/package.json`, {
+        paths: [fromDir],
+      });
+    } catch {
+      try {
+        let dir = path.dirname(require.resolve(name, { paths: [fromDir] }));
+        for (;;) {
+          try {
+            await fs.access(path.join(dir, "package.json"));
+            pkgJsonPath = path.join(dir, "package.json");
+            break;
+          } catch {
+            const parent = path.dirname(dir);
+            if (parent === dir) throw new Error("package.json not found");
+            dir = parent;
+          }
+        }
+      } catch {
+        // Optional/peer dep not installed — puppeteer runs fine without it.
+        console.warn(`Warning: could not resolve ${name} from ${fromDir}`);
+        continue;
+      }
+    }
+    const realDir = await fs.realpath(path.dirname(pkgJsonPath));
+    await stagePackage(name, realDir);
+    const pkgJson = JSON.parse(
+      await fs.readFile(path.join(realDir, "package.json"), "utf8")
+    );
+    for (const dep of Object.keys(pkgJson.dependencies ?? {})) {
+      if (!stagedPkgs.has(dep)) queue.push({ name: dep, fromDir: realDir });
+    }
+  }
+
+  // Stage every Turbopack hashed alias (e.g. "puppeteer-582bc9288a971b4a" →
+  // puppeteer) as a real copy of the package it points to.
+  let aliases = [];
+  try { aliases = await fs.readdir(nextNodeModules); } catch { /* ok */ }
+  for (const alias of aliases) {
     let realTarget;
     try {
-      realTarget = await fs.realpath(src);
+      realTarget = await fs.realpath(path.join(nextNodeModules, alias));
     } catch {
       continue;
     }
-    // Derive the real package name from the resolved path (last path segment)
     const realPkg = path.basename(realTarget);
-
-    // Write a CJS-only stub. ESM bare specifiers don't honour NODE_PATH, but
-    // CJS require() does. When Turbopack does import("puppeteer-<hash>"), Node
-    // sees no "import" export condition, falls back to the CJS "require" path,
-    // executes index.js, and require("puppeteer") resolves via NODE_PATH →
-    // vendor/puppeteer (which has puppeteer-core right next to it in vendor/).
-    const stubDir = path.join(stagedNextModules, alias);
-    await fs.mkdir(stubDir, { recursive: true });
-    await fs.writeFile(
-      path.join(stubDir, "index.js"),
-      `module.exports = require(${JSON.stringify(realPkg)});\n`
-    );
-    await fs.writeFile(
-      path.join(stubDir, "package.json"),
-      JSON.stringify(
-        {
-          name: alias,
-          version: "0.0.1",
-          type: "commonjs",
-          main: "index.js",
-          exports: { ".": "./index.js" },
-        },
-        null,
-        2
-      ) + "\n"
-    );
+    const realDir = stagedPkgs.get(realPkg) ?? realTarget;
+    await fs.cp(realDir, path.join(stagedNextModules, alias), {
+      recursive: true,
+      dereference: true,
+    });
   }
-} catch {
-  // ignore if not present
+} catch (e) {
+  console.warn("Warning: could not stage .next/node_modules:", e.message);
 }
 
 

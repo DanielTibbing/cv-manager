@@ -123,9 +123,14 @@ electron-builder.yml       # unsigned packaging config (mac dmg, Windows nsis,
                            # Gotcha: electron-builder strips top-level node_modules from
                            # extraResources, so prepare-standalone stages the server as
                            # build/app-server with node_modules renamed to vendor/, and
-                           # electron/main.cjs sets NODE_PATH to it when forking. The
-                           # staged Chromium's executable path varies per OS/arch and is
-                           # recorded in build/chrome/executable.json (read by main.cjs).
+                           # electron/main.cjs sets NODE_PATH to it when forking.
+                           # ESM import() ignores NODE_PATH, so the serverExternalPackages
+                           # (puppeteer & co.) and their full dependency closure are also
+                           # staged as real directories in build/app-server/.next/
+                           # node_modules/ (incl. Turbopack's hashed alias names), where
+                           # ESM walk-up resolution finds them. The staged Chromium's
+                           # executable path varies per OS/arch and is recorded in
+                           # build/chrome/executable.json (read by main.cjs).
 .github/workflows/release.yml  # CI: builds all 4 variants per push, publishes a rolling
                            # "Latest build" prerelease with the installers.
 ```

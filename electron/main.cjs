@@ -65,9 +65,10 @@ async function startServer() {
         ),
         // electron-builder strips top-level node_modules from extraResources,
         // so the staged server resolves its dependencies via NODE_PATH.
-        // .next/node_modules/ holds Turbopack alias stubs (e.g. puppeteer-<hash>)
-        // that re-export from vendor/; both paths must be on NODE_PATH so that
-        // when the stub does require("puppeteer") it resolves from vendor/.
+        // .next/node_modules/ holds real copies of the Turbopack-externalized
+        // packages (puppeteer & co., incl. their hashed alias names) — ESM
+        // import() finds those by walking up from .next/server/chunks/, while
+        // NODE_PATH covers the CJS requires server.js makes from vendor/.
         NODE_PATH: [
           path.join(process.resourcesPath, "app-server", "vendor"),
           path.join(process.resourcesPath, "app-server", ".next", "node_modules"),
