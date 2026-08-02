@@ -32,6 +32,44 @@ await fs.rename(
   path.join(staging, "vendor")
 );
 
+// Helper to recursively copy directories while expanding all symlinks into real files
+async function copyDereferenced(src, dest) {
+  let realSrc = src;
+  try {
+    realSrc = await fs.realpath(src);
+  } catch {
+    return;
+  }
+  const realStat = await fs.stat(realSrc);
+  if (realStat.isDirectory()) {
+    await fs.mkdir(dest, { recursive: true });
+    const children = await fs.readdir(realSrc);
+    for (const child of children) {
+      await copyDereferenced(path.join(realSrc, child), path.join(dest, child));
+    }
+  } else {
+    await fs.mkdir(path.dirname(dest), { recursive: true });
+    await fs.copyFile(realSrc, dest);
+  }
+}
+
+// Stage Turbopack's internal module aliases (.next/node_modules) into staged app-server,
+// expanding any symlinks into real directories so they work standalone in built app.
+const nextNodeModules = path.join(root, ".next", "node_modules");
+try {
+  const stagedNextModules = path.join(staging, ".next", "node_modules");
+  await fs.rm(stagedNextModules, { recursive: true, force: true });
+  const entries = await fs.readdir(nextNodeModules);
+  for (const entry of entries) {
+    await copyDereferenced(
+      path.join(nextNodeModules, entry),
+      path.join(stagedNextModules, entry)
+    );
+  }
+} catch {
+  // ignore if not present
+}
+
 // Next.js NFT omits Turbopack app-route runtime files from standalone output;
 // copy next-server compiled runtimes to vendor/next/dist/compiled/next-server.
 const nextServerSrc = path.join(
