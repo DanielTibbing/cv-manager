@@ -131,8 +131,8 @@ electron-builder.yml       # unsigned packaging config (mac dmg, Windows nsis,
                            # ESM walk-up resolution finds them. The staged Chromium's
                            # executable path varies per OS/arch and is recorded in
                            # build/chrome/executable.json (read by main.cjs).
-.github/workflows/release.yml  # CI: builds all 4 variants per push, publishes a rolling
-                           # "Latest build" prerelease with the installers.
+.github/workflows/release.yml  # CI: builds all 4 variants on v* tag pushes (or manual
+                           # dispatch) and publishes them to a GitHub release for that tag.
 ```
 
 ## Architecture invariants — do not break these
