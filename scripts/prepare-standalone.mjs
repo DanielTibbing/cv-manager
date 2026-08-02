@@ -32,43 +32,68 @@ await fs.rename(
   path.join(staging, "vendor")
 );
 
-// Helper to recursively copy directories while expanding all symlinks into real files
-async function copyDereferenced(src, dest) {
-  let realSrc = src;
-  try {
-    realSrc = await fs.realpath(src);
-  } catch {
-    return;
-  }
-  const realStat = await fs.stat(realSrc);
-  if (realStat.isDirectory()) {
-    await fs.mkdir(dest, { recursive: true });
-    const children = await fs.readdir(realSrc);
-    for (const child of children) {
-      await copyDereferenced(path.join(realSrc, child), path.join(dest, child));
-    }
-  } else {
-    await fs.mkdir(path.dirname(dest), { recursive: true });
-    await fs.copyFile(realSrc, dest);
-  }
-}
 
-// Stage Turbopack's internal module aliases (.next/node_modules) into staged app-server,
-// expanding any symlinks into real directories so they work standalone in built app.
+// Stage Turbopack's internal module aliases (.next/node_modules) as re-export stubs.
+// Turbopack aliases e.g. "puppeteer-<hash>" → puppeteer so the runtime can do
+// externalImport("puppeteer-<hash>"). Copying the real package doesn't work because
+// the copy would then try to require('puppeteer-core') relative to itself, which
+// isn't in that directory. Instead we write a tiny stub that just re-exports from
+// the real package in vendor/, where NODE_PATH resolves it correctly.
 const nextNodeModules = path.join(root, ".next", "node_modules");
 try {
   const stagedNextModules = path.join(staging, ".next", "node_modules");
   await fs.rm(stagedNextModules, { recursive: true, force: true });
+
   const entries = await fs.readdir(nextNodeModules);
-  for (const entry of entries) {
-    await copyDereferenced(
-      path.join(nextNodeModules, entry),
-      path.join(stagedNextModules, entry)
+  for (const alias of entries) {
+    const src = path.join(nextNodeModules, alias);
+    // Resolve the symlink to find which real package this alias points to
+    let realTarget;
+    try {
+      realTarget = await fs.realpath(src);
+    } catch {
+      continue;
+    }
+    // Derive the real package name from the resolved path (last path segment)
+    const realPkg = path.basename(realTarget);
+
+    // Write a stub: package.json with main/exports + an index.js that re-exports
+    const stubDir = path.join(stagedNextModules, alias);
+    await fs.mkdir(stubDir, { recursive: true });
+    // CJS stub
+    await fs.writeFile(
+      path.join(stubDir, "index.js"),
+      `module.exports = require(${JSON.stringify(realPkg)});\n`
+    );
+    // ESM stub (for import())
+    await fs.writeFile(
+      path.join(stubDir, "index.mjs"),
+      `export * from ${JSON.stringify(realPkg)};\nexport { default } from ${JSON.stringify(realPkg)};\n`
+    );
+    await fs.writeFile(
+      path.join(stubDir, "package.json"),
+      JSON.stringify(
+        {
+          name: alias,
+          version: "0.0.1",
+          main: "index.js",
+          exports: {
+            ".": {
+              import: "./index.mjs",
+              require: "./index.js",
+              default: "./index.js",
+            },
+          },
+        },
+        null,
+        2
+      ) + "\n"
     );
   }
 } catch {
   // ignore if not present
 }
+
 
 // Next.js NFT omits Turbopack app-route runtime files from standalone output;
 // copy next-server compiled runtimes to vendor/next/dist/compiled/next-server.
