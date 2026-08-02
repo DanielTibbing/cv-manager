@@ -11,8 +11,8 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json(result, { status: 201 });
   } catch (err) {
     console.error("PDF export resume failed:", err);
-    const message = err instanceof Error ? err.message : "Export failed";
-    const status = message.startsWith("Resume not found") ? 404 : 500;
+    const message = err instanceof Error ? err.message : String(err);
+    const status = message.startsWith("Resume not found") ? 404 : 422;
     return NextResponse.json({ error: message }, { status });
   }
 }

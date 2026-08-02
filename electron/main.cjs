@@ -71,8 +71,14 @@ async function startServer() {
     }
   );
 
-  serverProcess.stdout?.pipe(logStream);
-  serverProcess.stderr?.pipe(logStream);
+  serverProcess.stdout?.on("data", (chunk) => {
+    logStream.write(chunk);
+    process.stdout?.write(chunk);
+  });
+  serverProcess.stderr?.on("data", (chunk) => {
+    logStream.write(chunk);
+    process.stderr?.write(chunk);
+  });
   serverProcess.on("exit", (code) => {
     serverProcess = null;
     if (!quitting && code && code !== 0) {

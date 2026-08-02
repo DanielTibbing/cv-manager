@@ -20,8 +20,8 @@ export async function POST(req: NextRequest, { params }: Params) {
         { status: 400 }
       );
     }
-    const message = err instanceof Error ? err.message : "Export failed";
-    const status = message.startsWith("Letter not found") ? 404 : 500;
+    const message = err instanceof Error ? err.message : String(err);
+    const status = message.startsWith("Letter not found") ? 404 : 422;
     return NextResponse.json({ error: message }, { status });
   }
 }
